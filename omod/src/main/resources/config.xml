@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module configVersion="1.2">
+
+	<id>${project.parent.artifactId}</id>
+	<name>${project.parent.name}</name>
+	<version>${project.parent.version}</version>
+	<package>${project.parent.groupId}.${project.parent.artifactId}</package>
+	<author>${project.parent.organization.name}</author>
+	<description>${project.parent.description}</description>
+
+	<activator>org.openmrs.module.oauth2login.OAuth2LoginActivator</activator>
+
+	<require_version>${openmrsPlatformVersion}</require_version>
+
+	<filter>
+		<filter-name>oauth2-request-filter</filter-name>
+		<filter-class>org.openmrs.module.oauth2login.web.filter.OAuth2LoginRequestFilter</filter-class>
+		<init-param>
+			<param-name>moduleURIs</param-name>
+			<!-- Comma separated list of servlets that should not be filtered, eg. /foo,/bar,/baz -->
+			<param-value>/oauth2login</param-value>
+		</init-param>
+	</filter>
+
+	<filter-mapping>
+		<filter-name>oauth2-request-filter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+</module>

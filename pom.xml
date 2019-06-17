@@ -1,0 +1,97 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.openmrs.maven.parents</groupId>
+		<artifactId>maven-parent-openmrs-module</artifactId>
+		<version>1.1.1</version>
+	</parent>
+
+	<groupId>org.openmrs.module</groupId>
+	<artifactId>oauth2login</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>OAuth 2.0 Login</name>
+	<description>Delegates user authentication to an OAuth 2.0 authentication provider.</description>
+	
+	<organization>
+		<name>OpenMRS</name>
+		<url>http://openmrs.org</url>
+	</organization>
+	
+	<scm>
+		<connection>scm:git:git@github.com:openmrs/openmrs-module-oauth2login.git</connection>
+		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-oauth2login.git</developerConnection>
+		<url>https://github.com/openmrs/openmrs-module-oauth2login/</url>
+		<tag>HEAD</tag>
+	</scm>
+	
+	<properties>
+		<openmrsPlatformVersion>2.2.1-SNAPSHOT</openmrsPlatformVersion>
+		<javax.servletVersion>2.0</javax.servletVersion>
+		<javax.servlet-apiVersion>3.0.1</javax.servlet-apiVersion>
+		<spring-security-oauth2Version>2.3.5.RELEASE</spring-security-oauth2Version>
+		<json-pathVersion>2.4.0</json-pathVersion>
+	</properties>
+	
+	<modules>
+		<module>api</module>
+		<module>omod</module>
+	</modules>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.openmrs.web</groupId>
+				<artifactId>openmrs-web</artifactId>
+				<version>${openmrsPlatformVersion}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.openmrs.api</groupId>
+				<artifactId>openmrs-api</artifactId>
+				<version>${openmrsPlatformVersion}</version>
+				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>javax.servlet</groupId>
+				<artifactId>jsp-api</artifactId>
+				<version>${javax.servletVersion}</version>
+				<scope>provided</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
+	<repositories>
+		<repository>
+			<id>openmrs-repo</id>
+			<name>OpenMRS Nexus Repository</name>
+			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+		</repository>
+	</repositories>
+	
+	<pluginRepositories>
+		<pluginRepository>
+			<id>openmrs-repo</id>
+			<name>OpenMRS Nexus Repository</name>
+			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+	
+	<distributionManagement>
+		<repository>
+			<id>openmrs-repo-modules</id>
+			<name>OpenMRS Modules</name>
+			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/modules</url>
+		</repository>
+		<snapshotRepository>
+			<id>openmrs-repo-snapshots</id>
+			<name>OpenMRS Snapshots</name>
+			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+	
+</project>
