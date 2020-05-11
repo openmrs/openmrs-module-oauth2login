@@ -71,7 +71,7 @@ public class OAuth2LoginRequestFilter implements Filter {
 			return;
 		}
 		
-		// Logout (then re-authentication)
+		// Logout (then redirect to logout url)
 		if (path.equalsIgnoreCase("/oauth2logout")) {
 			
 			Context.logout();
