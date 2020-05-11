@@ -38,23 +38,28 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	 * @return The test app data dir name for the current integration test.
 	 */
 	protected abstract String getAppDataDirName();
-	
+
 	/**
 	 * @return The user info JSON response received from the OAuth 2 resource server.
 	 */
 	protected abstract String getUserInfoJson();
-	
+
 	public OAuth2IntegrationTest() {
 		super();
-		
-		String path = getClass().getClassLoader().getResource(getAppDataDirName()).getPath();
-		
+
+		String path = normalizePath(getClass().getClassLoader().getResource(getAppDataDirName()).getPath());
 		System.setProperty("OPENMRS_APPLICATION_DATA_DIRECTORY", path);
-		
+
 		this.runtimeProperties.setProperty(OpenmrsConstants.APPLICATION_DATA_DIRECTORY_RUNTIME_PROPERTY, path);
 		Context.setRuntimeProperties(runtimeProperties);
 	}
-	
+
+	private String normalizePath(String path) {
+		//on windows we get /C:/.... so have to replace the first /
+		path = path.replaceFirst("^/(.:/)", "$1");
+		return path;
+	}
+
 	@Mock
 	private RestOperations testRestTemplate;
 	
@@ -71,11 +76,11 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	protected Credentials getCredentials() {
 		String propsResPath = Paths.get(getAppDataDirName(), "oauth2.properties").toString();
 		try {
-			oauth2Props = OAuth2BeanFactory.getProperties(Paths.get(getClass().getClassLoader().getResource(propsResPath)
-			        .getPath()));
+			oauth2Props = OAuth2BeanFactory.getProperties(Paths.get(normalizePath(getClass().getClassLoader().getResource(propsResPath)
+			        .getPath())));
 		}
 		catch (IOException e) {
-			Assert.fail("The OAuth 2 properties could not be obtained for the authentication test.");
+			Assert.fail("The OAuth 2 properties could not be obtained for the authentication test: "+e.getMessage());
 			e.printStackTrace();
 		}
 		
