@@ -1,4 +1,4 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -66,8 +66,17 @@ public class OAuth2LoginController {
 	public ModelAndView login() throws RestClientException, IOException, URISyntaxException {
 		
 		authenticateWithSpringSecurity();
-		
-		String userInfoJson = restTemplate.getForObject(new URI(userInfoUri), String.class);
+		if (log.isInfoEnabled()) {
+			log.info("try login via userInfoUri: " + userInfoUri);
+		}
+		String userInfoJson=null;
+		try {
+			userInfoJson = restTemplate.getForObject(new URI(userInfoUri), String.class);
+		}catch (Exception ex){
+			//just to have the error in openMRS logs.
+			log.error("can't validate oauth2 login",ex);
+			throw ex;
+		}
 		
 		String username = getUsername(userInfoJson);
 		if (StringUtils.isEmpty(username)) {
@@ -78,7 +87,7 @@ public class OAuth2LoginController {
 		OAuth2User user = new OAuth2User(username, userInfoJson);
 		
 		Authenticated authenticated = Context.authenticate(new OAuth2TokenCredentials(user));
-		log.info("The user '" + username + "' was successfully authenticated with OpenMRS.");
+		log.info("The user '" + username + "' was successfully authenticated with OpenMRS with user "+authenticated.getUser());
 		
 		return new ModelAndView("redirect:/");
 	}
