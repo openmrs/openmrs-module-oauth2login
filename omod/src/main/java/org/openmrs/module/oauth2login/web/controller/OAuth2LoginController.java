@@ -69,7 +69,7 @@ public class OAuth2LoginController {
 		if (log.isInfoEnabled()) {
 			log.info("try login via userInfoUri: " + userInfoUri);
 		}
-		String userInfoJson=null;
+		String userInfoJson;
 		try {
 			userInfoJson = restTemplate.getForObject(new URI(userInfoUri), String.class);
 		}catch (Exception ex){
