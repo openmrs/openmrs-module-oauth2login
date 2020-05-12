@@ -1,4 +1,4 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -10,8 +10,8 @@
 package org.openmrs.module.oauth2login.web.controller;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,6 +19,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.util.OpenmrsUtil;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -30,24 +32,29 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.web.client.RestTemplate;
 
 /**
- * @see https://projects.spring.io/spring-security-oauth/docs/oauth2.html
- * @see https://stackoverflow.com/a/27882337/321797
+ * @see  <a href="https://projects.spring.io/spring-security-oauth/docs/oauth2.html">Spring Documentation</a>
+ * @see <a href="https://stackoverflow.com/a/27882337/321797">stackoverflow related question</a>
  */
 @EnableOAuth2Client
 @Configuration
 public class OAuth2BeanFactory {
 	
+	protected static final Log LOG = LogFactory.getLog(OAuth2BeanFactory.class);
+	
 	public static Properties getProperties(Path path) throws IOException {
-		Reader reader = new InputStreamReader(Files.newInputStream(path), StandardCharsets.UTF_8);
 		Properties props = new Properties();
-		try {
-			props.load(reader);
+		try(InputStream inputStream=Files.newInputStream(path)) {
+			props.load( new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 		}
-		finally {
-			reader.close();
-		}
-		
 		return props;
+	}
+	
+	public static Path getOauth2PropertiesPath() {
+		Path path = Paths.get(OpenmrsUtil.getApplicationDataDirectory(), "oauth2.properties");
+		if (!path.toFile().exists()) {
+			LOG.error("the property file doesn't exist " + path.toAbsolutePath());
+		}
+		return path;
 	}
 	
 	/**
@@ -56,7 +63,7 @@ public class OAuth2BeanFactory {
 	 */
 	@Bean(name = "oauth2.properties")
 	public Properties getOAuth2Properties() throws IOException {
-		return getProperties(Paths.get(OpenmrsUtil.getApplicationDataDirectory(), "oauth2.properties"));
+		return getProperties(getOauth2PropertiesPath());
 	}
 	
 	@Bean(name = "oauth2.userInfoUri")
@@ -73,7 +80,7 @@ public class OAuth2BeanFactory {
 	 */
 	@Bean(name = "oauth2.restTemplate")
 	public RestTemplate getOAuth2RestTemplate(@Qualifier("oauth2.properties") Properties props,
-	        OAuth2ClientContext oauth2Context) throws IOException {
+	        OAuth2ClientContext oauth2Context)  {
 		
 		AuthorizationCodeResourceDetails resource = new AuthorizationCodeResourceDetails();
 		resource.setClientId(props.getProperty("clientId"));
