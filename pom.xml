@@ -13,19 +13,19 @@
 	<packaging>pom</packaging>
 	<name>OAuth 2.0 Login</name>
 	<description>Delegates user authentication to an OAuth 2.0 authentication provider.</description>
-	
+
 	<organization>
 		<name>OpenMRS</name>
 		<url>http://openmrs.org</url>
 	</organization>
-	
+
 	<scm>
 		<connection>scm:git:git@github.com:openmrs/openmrs-module-oauth2login.git</connection>
 		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-oauth2login.git</developerConnection>
 		<url>https://github.com/openmrs/openmrs-module-oauth2login/</url>
 		<tag>HEAD</tag>
 	</scm>
-	
+
 	<properties>
 		<openmrsPlatformVersion>2.2.1-SNAPSHOT</openmrsPlatformVersion>
 		<javax.servletVersion>2.0</javax.servletVersion>
@@ -33,12 +33,12 @@
 		<spring-security-oauth2Version>2.3.5.RELEASE</spring-security-oauth2Version>
 		<json-pathVersion>2.4.0</json-pathVersion>
 	</properties>
-	
+
 	<modules>
 		<module>api</module>
 		<module>omod</module>
 	</modules>
-	
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -61,7 +61,19 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 	<repositories>
 		<repository>
 			<id>openmrs-repo</id>
@@ -69,7 +81,7 @@
 			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/public</url>
 		</repository>
 	</repositories>
-	
+
 	<pluginRepositories>
 		<pluginRepository>
 			<id>openmrs-repo</id>
@@ -80,7 +92,7 @@
 			</snapshots>
 		</pluginRepository>
 	</pluginRepositories>
-	
+
 	<distributionManagement>
 		<repository>
 			<id>openmrs-repo-modules</id>
@@ -93,5 +105,5 @@
 			<url>http://mavenrepo.openmrs.org/nexus/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
-	
+
 </project>
