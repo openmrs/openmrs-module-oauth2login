@@ -1,4 +1,4 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -22,12 +22,9 @@ import com.jayway.jsonpath.JsonPath;
 
 public class OAuth2User {
 	
-	private static final Log log = LogFactory.getLog(OAuth2User.class);
-	
 	public final static String MAPPINGS_PFX = "openmrs.mapping.";
 	
-	public final static String DEFAULTS_PFX = "openmrs.default.";
-	
+
 	public final static String PROP_USERNAME = "user.username";
 	
 	public final static String PROP_EMAIL = "user.email";
