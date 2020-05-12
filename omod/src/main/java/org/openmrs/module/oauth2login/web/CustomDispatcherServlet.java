@@ -1,4 +1,4 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -27,7 +27,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 /**
  * See 'Limitations' and 'Alternatives' at the below wiki page.
  * 
- * @see {@linkplain https://wiki.openmrs.org/display/docs/Module+Servlets}
+ * @see <a href="https://wiki.openmrs.org/display/docs/Module+Servlets">OpenMRS documentation related to Module and Servlets</a>
  */
 @Component
 public class CustomDispatcherServlet implements ServletContextAware {
