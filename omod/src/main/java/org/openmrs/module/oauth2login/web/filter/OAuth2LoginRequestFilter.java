@@ -79,7 +79,7 @@ public class OAuth2LoginRequestFilter implements Filter {
 			if (httpRequest.getSession() != null) {
 				httpRequest.getSession().removeAttribute("manual-logout");
 			}
-			Properties properties = OAuth2BeanFactory.getProperties(OAuth2BeanFactory.getOauth2PropertesPath());
+			Properties properties = OAuth2BeanFactory.getProperties(OAuth2BeanFactory.getOauth2PropertiesPath());
 			String redirectPath = properties.getProperty("logoutUri");
 			httpResponse
 			        .sendRedirect(StringUtils.defaultIfBlank(redirectPath, httpRequest.getContextPath() + "/oauth2login"));
