@@ -1,4 +1,4 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.UserContext;
+import org.openmrs.module.oauth2login.web.controller.OAuth2IntegrationTest;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -39,12 +40,12 @@ import org.springframework.mock.web.MockHttpServletRequest;
 @PrepareForTest(Context.class)
 public class OAuth2LoginRequestFilterTest {
 	
-	private OAuth2LoginRequestFilter filter = new OAuth2LoginRequestFilter();
+	private final OAuth2LoginRequestFilter filter = new OAuth2LoginRequestFilter();
 	
 	@Before
 	public void setup() throws ServletException {
-		PowerMockito.spy(Context.class);
-		
+		PowerMockito.mockStatic(Context.class);
+		OAuth2IntegrationTest.initPathInSystemProperties("Keycloak");
 		FilterConfig filterConfig = mock(FilterConfig.class);
 		when(filterConfig.getInitParameter(eq("moduleURIs"))).thenReturn("/oauth2login");
 		filter.init(filterConfig);
@@ -62,7 +63,7 @@ public class OAuth2LoginRequestFilterTest {
 		filter.doFilter(request, response, chain);
 		
 		// verify
-		verify(response, times(1)).sendRedirect("/oauth2logout");
+		verify(response, times(1)).sendRedirect("http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout");
 		verifyZeroInteractions(chain);
 	}
 	
@@ -76,7 +77,6 @@ public class OAuth2LoginRequestFilterTest {
 		FilterChain chain = mock(FilterChain.class);
 		
 		OAuth2LoginRequestFilter filterSpy = spy(filter);
-		
 		// replay
 		filterSpy.doFilter(request, response, chain);
 		
@@ -86,7 +86,7 @@ public class OAuth2LoginRequestFilterTest {
 			Context.logout();
 		}
 		verify(filterSpy, times(1)).logoutFromSpringSecurity(request, response);
-		verify(response, times(1)).sendRedirect("/oauth2login");
+		verify(response, times(1)).sendRedirect("http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout");
 		verifyZeroInteractions(chain);
 	}
 	
