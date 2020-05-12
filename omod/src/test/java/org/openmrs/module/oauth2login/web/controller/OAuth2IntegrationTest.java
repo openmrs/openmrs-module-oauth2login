@@ -62,7 +62,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	private static String normalizePath(String path) {
 		//on windows we get /C:/.... so have to replace the first /
-		return  path.replaceFirst("^/(.:/)", "$1");
+		return path.replaceFirst("^/(.:/)", "$1");
 	}
 	
 	@Mock

@@ -72,9 +72,10 @@ public class OAuth2LoginController {
 		String userInfoJson;
 		try {
 			userInfoJson = restTemplate.getForObject(new URI(userInfoUri), String.class);
-		}catch (Exception ex){
+		}
+		catch (Exception ex) {
 			//just to have the error in openMRS logs.
-			log.error("can't validate oauth2 login",ex);
+			log.error("can't validate oauth2 login", ex);
 			throw ex;
 		}
 		
@@ -87,7 +88,8 @@ public class OAuth2LoginController {
 		OAuth2User user = new OAuth2User(username, userInfoJson);
 		
 		Authenticated authenticated = Context.authenticate(new OAuth2TokenCredentials(user));
-		log.info("The user '" + username + "' was successfully authenticated with OpenMRS with user "+authenticated.getUser());
+		log.info("The user '" + username + "' was successfully authenticated with OpenMRS with user "
+		        + authenticated.getUser());
 		
 		return new ModelAndView("redirect:/");
 	}

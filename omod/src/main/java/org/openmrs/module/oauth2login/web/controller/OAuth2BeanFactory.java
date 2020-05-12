@@ -32,7 +32,8 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.web.client.RestTemplate;
 
 /**
- * @see  <a href="https://projects.spring.io/spring-security-oauth/docs/oauth2.html">Spring Documentation</a>
+ * @see <a href="https://projects.spring.io/spring-security-oauth/docs/oauth2.html">Spring
+ *      Documentation</a>
  * @see <a href="https://stackoverflow.com/a/27882337/321797">stackoverflow related question</a>
  */
 @EnableOAuth2Client
@@ -80,7 +81,7 @@ public class OAuth2BeanFactory {
 	 */
 	@Bean(name = "oauth2.restTemplate")
 	public RestTemplate getOAuth2RestTemplate(@Qualifier("oauth2.properties") Properties props,
-	        OAuth2ClientContext oauth2Context)  {
+	        OAuth2ClientContext oauth2Context) {
 		
 		AuthorizationCodeResourceDetails resource = new AuthorizationCodeResourceDetails();
 		resource.setClientId(props.getProperty("clientId"));

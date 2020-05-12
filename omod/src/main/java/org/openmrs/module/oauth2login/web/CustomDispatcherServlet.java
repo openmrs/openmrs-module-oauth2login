@@ -27,7 +27,8 @@ import org.springframework.web.servlet.DispatcherServlet;
 /**
  * See 'Limitations' and 'Alternatives' at the below wiki page.
  * 
- * @see <a href="https://wiki.openmrs.org/display/docs/Module+Servlets">OpenMRS documentation related to Module and Servlets</a>
+ * @see <a href="https://wiki.openmrs.org/display/docs/Module+Servlets">OpenMRS documentation
+ *      related to Module and Servlets</a>
  */
 @Component
 public class CustomDispatcherServlet implements ServletContextAware {

@@ -17,5 +17,5 @@ public class OAuth2LoginConstants {
 	public static final String MODULE_NAME = "OAuth 2.0 Login";
 	
 	public static final String MODULE_ARTIFACT_ID = "oauth2login";
-
+	
 }

@@ -24,7 +24,6 @@ public class OAuth2User {
 	
 	public final static String MAPPINGS_PFX = "openmrs.mapping.";
 	
-
 	public final static String PROP_USERNAME = "user.username";
 	
 	public final static String PROP_EMAIL = "user.email";
