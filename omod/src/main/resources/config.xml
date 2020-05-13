@@ -18,7 +18,7 @@
 		<init-param>
 			<param-name>moduleURIs</param-name>
 			<!-- Comma separated list of servlets that should not be filtered, eg. /foo,/bar,/baz -->
-			<param-value>/oauth2login</param-value>
+			<param-value>/oauth2login,/oauth2logout</param-value>
 		</init-param>
 	</filter>
 
