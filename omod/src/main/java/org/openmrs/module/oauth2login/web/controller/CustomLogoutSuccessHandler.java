@@ -10,9 +10,12 @@
 package org.openmrs.module.oauth2login.web.controller;
 
 import org.apache.commons.lang3.StringUtils;
+import org.openmrs.api.context.Context;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.OAuth2RestOperations;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
 import org.springframework.web.client.RestOperations;
@@ -26,11 +29,19 @@ import java.util.Properties;
 
 public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler implements LogoutSuccessHandler {
 	
-	private RestOperations restTemplate;
+	private OAuth2RestOperations restTemplate;
 	
 	@Autowired
-	public void setRestTemplate(@Qualifier("oauth2.restTemplate") RestOperations restTemplate) {
+	public void setRestTemplate(@Qualifier("oauth2.restTemplate") OAuth2RestOperations restTemplate) {
 		this.restTemplate = restTemplate;
+	}
+	
+	public String getToken() {
+		OAuth2AccessToken accessToken = restTemplate.getAccessToken();
+		if (accessToken != null) {
+			return StringUtils.defaultString(accessToken.getValue());
+		}
+		return StringUtils.EMPTY;
 	}
 	
 	@Override
@@ -40,13 +51,11 @@ public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler im
 		String redirectPath = properties.getProperty("logoutUri");
 		//the redirect path can contain a [token] that should be replaced by the aut token
 		if (redirectPath.contains("[token]")) {
-			String token = "";
-			if (authentication instanceof OAuth2LoginController.CustomAuthentication) {
-				token = ((OAuth2LoginController.CustomAuthentication) authentication).getToken();
-			}
+			String token = getToken();
 			String encoded = URLEncoder.encode(token, "UTF-8");
 			redirectPath = StringUtils.replace(redirectPath, "[token]", encoded);
 		}
+		Context.logout();
 		redirectPath = StringUtils.defaultIfBlank(redirectPath, request.getContextPath() + "/oauth2login");
 		super.getRedirectStrategy().sendRedirect(request, response, redirectPath);
 	}
