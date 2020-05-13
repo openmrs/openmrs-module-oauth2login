@@ -9,29 +9,14 @@
  */
 package org.openmrs.module.oauth2login.web.filter;
 
+import org.openmrs.api.context.Context;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.lang3.StringUtils;
-import org.openmrs.api.context.Context;
-import org.openmrs.module.oauth2login.web.controller.OAuth2BeanFactory;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextImpl;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 
 /**
  * This servlet filter ensures that the only way to authenticate is through the appropriate URI
@@ -67,30 +52,22 @@ public class OAuth2LoginRequestFilter implements Filter {
 		String path = httpRequest.getServletPath();
 		path = (path == null) ? "" : path;
 		
-		// Logout (forwarding)
-		// Logout (then redirect to logout url)
-		//"manual-logout": should be a constant from org.openmrs.module.appui.AppUiConstants
-		if (isLogoutRequest(path, httpRequest)) {
+		if (!moduleURIs.contains(path)) {
 			
-			Context.logout();
-			
-			logoutFromSpringSecurity(httpRequest, httpResponse);
-			//to avoid loop in logout redirect
-			if (httpRequest.getSession() != null) {
-				httpRequest.getSession().removeAttribute("manual-logout");
+			// Logout (forwarding)
+			// Logout (then redirect to logout url)
+			//"manual-logout": should be a constant from org.openmrs.module.appui.AppUiConstants
+			if (isLogoutRequest(path, httpRequest)) {
+				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2logout");
+				return;
 			}
-			Properties properties = OAuth2BeanFactory.getProperties(OAuth2BeanFactory.getOauth2PropertiesPath());
-			String redirectPath = properties.getProperty("logoutUri");
-			httpResponse
-			        .sendRedirect(StringUtils.defaultIfBlank(redirectPath, httpRequest.getContextPath() + "/oauth2login"));
-			return;
-		}
-		
-		// Login
-		if (!Context.isAuthenticated() && !moduleURIs.contains(path)) {
-			// non-authenticated requests are forwarded to the module login controller
-			httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2login");
-			return;
+			
+			// Login
+			if (!Context.isAuthenticated()) {
+				// non-authenticated requests are forwarded to the module login controller
+				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2login");
+				return;
+			}
 		}
 		
 		chain.doFilter(httpRequest, httpResponse);
@@ -99,26 +76,10 @@ public class OAuth2LoginRequestFilter implements Filter {
 	private boolean isLogoutRequest(String path, HttpServletRequest httpServletRequest) {
 		//"manual-logout": should be a constant from org.openmrs.module.appui.AppUiConstants
 		//in OpenMRS the path is .../.../logout.action : should we use this .
-		return path.equalsIgnoreCase("/logout") || path.equalsIgnoreCase("/oauth2logout")
-		        || "true".equals(httpServletRequest.getSession().getAttribute("manual-logout"));
+		return path.equalsIgnoreCase("/logout")
+		//				|| path.equalsIgnoreCase("/oauth2logout")
+		        || (httpServletRequest.getSession() != null && "true".equals(httpServletRequest.getSession().getAttribute(
+		            "manual-logout")));
 	}
 	
-	protected void logoutFromSpringSecurity(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-	        throws ServletException {
-		HttpSession httpSession = httpRequest.getSession();
-		if (httpSession != null) {
-			SecurityContext securityContext = (SecurityContextImpl) httpSession.getAttribute("SPRING_SECURITY_CONTEXT");
-			if (securityContext != null) {
-				Authentication auth = securityContext.getAuthentication();
-				
-				if (auth.isAuthenticated()) {
-					auth.setAuthenticated(false);
-					new SecurityContextLogoutHandler().logout(httpRequest, httpResponse, auth);
-					SecurityContextHolder.clearContext();
-					httpRequest.logout();
-					httpRequest.getSession().invalidate();
-				}
-			}
-		}
-	}
 }

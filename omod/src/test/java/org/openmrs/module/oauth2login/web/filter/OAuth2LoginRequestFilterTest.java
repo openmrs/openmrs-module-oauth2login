@@ -24,6 +24,7 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -63,7 +64,7 @@ public class OAuth2LoginRequestFilterTest {
 		filter.doFilter(request, response, chain);
 		
 		// verify
-		verify(response, times(1)).sendRedirect("http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout");
+		verify(response, times(1)).sendRedirect("/oauth2logout");
 		verifyZeroInteractions(chain);
 	}
 	
@@ -71,8 +72,12 @@ public class OAuth2LoginRequestFilterTest {
 	public void logoutUri_shouldRedirectToLoginUri() throws Exception {
 		// setup
 		HttpServletRequest request = mock(HttpServletRequest.class);
+		HttpSession session = mock(HttpSession.class);
+		when(session.getAttribute("manual-logout")).thenReturn("true");
 		when(request.getContextPath()).thenReturn("");
-		when(request.getServletPath()).thenReturn("/oauth2logout");
+		
+		when(request.getSession()).thenReturn(session);
+		//		when(request.getServletPath()).thenReturn("/oauth2logout");
 		HttpServletResponse response = mock(HttpServletResponse.class);
 		FilterChain chain = mock(FilterChain.class);
 		
@@ -80,13 +85,7 @@ public class OAuth2LoginRequestFilterTest {
 		// replay
 		filterSpy.doFilter(request, response, chain);
 		
-		// verify
-		{
-			PowerMockito.verifyStatic(times(1));
-			Context.logout();
-		}
-		verify(filterSpy, times(1)).logoutFromSpringSecurity(request, response);
-		verify(response, times(1)).sendRedirect("http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout");
+		verify(response, times(1)).sendRedirect("/oauth2logout");
 		verifyZeroInteractions(chain);
 	}
 	
