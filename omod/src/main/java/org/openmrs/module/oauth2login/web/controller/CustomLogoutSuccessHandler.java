@@ -18,7 +18,6 @@ import org.springframework.security.oauth2.client.OAuth2RestOperations;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
-import org.springframework.web.client.RestOperations;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;

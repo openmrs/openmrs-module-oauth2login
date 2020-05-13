@@ -33,7 +33,7 @@ public class OAuth2LoginRequestFilter implements Filter {
 	private List<String> moduleURIs;
 	
 	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
+	public void init(FilterConfig filterConfig) {
 		String param = filterConfig.getInitParameter("moduleURIs");
 		moduleURIs = Arrays.asList(param.split(","));
 	}
