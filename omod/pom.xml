@@ -51,7 +51,7 @@
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
 			<artifactId>appframework-api</artifactId>
-			<scope>provided</scope>
+			<scope>test</scope>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
