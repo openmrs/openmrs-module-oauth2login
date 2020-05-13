@@ -28,6 +28,7 @@
 
 	<properties>
 		<openmrsPlatformVersion>2.2.1-SNAPSHOT</openmrsPlatformVersion>
+		<openmrsAppframeworkVersion>2.15.0-SNAPSHOT</openmrsAppframeworkVersion>
 		<javax.servletVersion>2.0</javax.servletVersion>
 		<javax.servlet-apiVersion>3.0.1</javax.servlet-apiVersion>
 		<spring-security-oauth2Version>2.3.5.RELEASE</spring-security-oauth2Version>
@@ -46,6 +47,12 @@
 				<artifactId>openmrs-web</artifactId>
 				<version>${openmrsPlatformVersion}</version>
 				<scope>provided</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.openmrs.module</groupId>
+				<artifactId>appframework-api</artifactId>
+				<version>${openmrsAppframeworkVersion}</version>
+				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.openmrs.api</groupId>

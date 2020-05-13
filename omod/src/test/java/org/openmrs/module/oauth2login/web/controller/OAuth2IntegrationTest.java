@@ -48,11 +48,16 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	public OAuth2IntegrationTest() {
 		super();
-		initPathInSystemProperties(getAppDataDirName());
-		OAuth2IntegrationTest.runtimeProperties.setProperty(OpenmrsConstants.APPLICATION_DATA_DIRECTORY_RUNTIME_PROPERTY,
+		initBaseModuleContext(getAppDataDirName());
+		
+	}
+	
+	protected static void initBaseModuleContext(String appDataDirName) {
+		initPathInSystemProperties(appDataDirName);
+		BaseModuleContextSensitiveTest.runtimeProperties.setProperty(
+		    OpenmrsConstants.APPLICATION_DATA_DIRECTORY_RUNTIME_PROPERTY,
 		    System.getProperty(OPENMRS_APPLICATION_DATA_DIRECTORY));
 		Context.setRuntimeProperties(runtimeProperties);
-		
 	}
 	
 	public static void initPathInSystemProperties(String appDataDirName) {
