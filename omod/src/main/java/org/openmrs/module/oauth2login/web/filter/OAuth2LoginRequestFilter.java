@@ -55,8 +55,6 @@ public class OAuth2LoginRequestFilter implements Filter {
 		if (!moduleURIs.contains(path)) {
 			
 			// Logout (forwarding)
-			// Logout (then redirect to logout url)
-			//"manual-logout": should be a constant from org.openmrs.module.appui.AppUiConstants
 			if (isLogoutRequest(path, httpRequest)) {
 				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2logout");
 				return;
@@ -75,7 +73,8 @@ public class OAuth2LoginRequestFilter implements Filter {
 	
 	private boolean isLogoutRequest(String path, HttpServletRequest httpServletRequest) {
 		//"manual-logout": should be a constant from org.openmrs.module.appui.AppUiConstants
-		//in OpenMRS the path is .../.../logout.action : should we use this .
+		//in OpenMRS the path is ../../logout.action : should we use this in this test ?
+		//the attribute seems to be used in any case.
 		return path.equalsIgnoreCase("/logout")
 		//				|| path.equalsIgnoreCase("/oauth2logout")
 		        || (httpServletRequest.getSession() != null && "true".equals(httpServletRequest.getSession().getAttribute(
