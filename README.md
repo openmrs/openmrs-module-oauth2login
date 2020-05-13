@@ -61,6 +61,10 @@ Again, this is a convenience to streamline the first login experience with OpenM
 
 Finally this convenience can only work when we have control over the what the user info response JSON can return.
 
+### Redirect URL after successful login
+By default, the user will be redirected to the home page `/` after successul login. The redirect URL can be modified by using the Global Property (GP)  `oauth2login.redirectUriAfterLogin`.
+For instance, if the reference application module is used, this GP can be changed to `/referenceapplication/login.page?redirectUrl=/index.html` in order to display the location selection page. 
+
 #### Example
 If a user authenticates as 'jdoe' with the OAuth 2 provider, OpenMRS will attempt to fetch the user 'jdoe'.
 * If a 'jdoe' user can be found in OpenMRS, then it will become the authenticated user.
