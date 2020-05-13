@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static org.mockito.Mockito.*;
+
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(Context.class)
 public class CustomLogoutSuccessHandlerTest {
@@ -27,8 +28,8 @@ public class CustomLogoutSuccessHandlerTest {
 	@Test
 	public void onLogoutSuccess_redirectToLogoutURL() throws IOException, ServletException {
 		//setup
-        PowerMockito.mockStatic(Context.class);
-
+		PowerMockito.mockStatic(Context.class);
+		
 		CustomLogoutSuccessHandler customLogoutSuccessHandler = new CustomLogoutSuccessHandler();
 		RedirectStrategy redirectStrategy = mock(RedirectStrategy.class);
 		customLogoutSuccessHandler.setRedirectStrategy(redirectStrategy);
@@ -41,9 +42,9 @@ public class CustomLogoutSuccessHandlerTest {
 		customLogoutSuccessHandler.onLogoutSuccess(request, response, null);
 		
 		//verify
-        PowerMockito.verifyStatic(times(1));
-        Context.logout();
-
+		PowerMockito.verifyStatic(times(1));
+		Context.logout();
+		
 		verify(redirectStrategy, times(1)).sendRedirect(request, response,
 		    "http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout?id_token_hint=myToken");
 		

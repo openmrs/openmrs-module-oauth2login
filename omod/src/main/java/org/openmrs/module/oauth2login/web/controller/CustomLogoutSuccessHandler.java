@@ -35,7 +35,7 @@ public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler im
 		this.restTemplate = restTemplate;
 	}
 	
-	public String getToken() {
+	private String getToken() {
 		OAuth2AccessToken accessToken = restTemplate.getAccessToken();
 		if (accessToken != null) {
 			return StringUtils.defaultString(accessToken.getValue());
@@ -49,7 +49,7 @@ public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler im
 		Properties properties = OAuth2BeanFactory.getProperties(OAuth2BeanFactory.getOauth2PropertiesPath());
 		String redirectPath = properties.getProperty("logoutUri");
 		//the redirect path can contain a [token] that should be replaced by the aut token
-		if (redirectPath.contains("[token]")) {
+		if (StringUtils.isNoneBlank(redirectPath) && redirectPath.contains("[token]")) {
 			String token = getToken();
 			String encoded = URLEncoder.encode(token, "UTF-8");
 			redirectPath = StringUtils.replace(redirectPath, "[token]", encoded);
