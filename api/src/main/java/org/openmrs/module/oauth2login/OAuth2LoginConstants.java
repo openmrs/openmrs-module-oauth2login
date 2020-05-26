@@ -1,4 +1,4 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -17,11 +17,5 @@ public class OAuth2LoginConstants {
 	public static final String MODULE_NAME = "OAuth 2.0 Login";
 	
 	public static final String MODULE_ARTIFACT_ID = "oauth2login";
-	
-	public static final String MODULE_SHORT_ID = "OAuth2";
-	
-	public static final String MODULE_BASE_URL = "/" + MODULE_ARTIFACT_ID;
-	
-	public static final String COMPONENT_LEGACY_CONTROLLER = MODULE_ARTIFACT_ID + "." + MODULE_NAME + "Controller";
 	
 }

@@ -66,6 +66,13 @@ If a user authenticates as 'jdoe' with the OAuth 2 provider, OpenMRS will attemp
 * If a 'jdoe' user can be found in OpenMRS, then it will become the authenticated user.
 * If a 'jdoe' user cannot be found in OpenMRS, it will be created with a initial set of roles and will become the authenticated user.
 
+## Redirect URL after successful login
+By default the user will be redirected to the root URL `/` after a successul login. The redirect URL can be modified by using the global property (GP) `oauth2login.redirectUriAfterLogin`.
+For example when the module is used within the Reference Application with the two-screen login enabled, this GP can be used to enforce a redirect to the login GSP page (hence kicking in its Java controller logic):
+```
+/referenceapplication/login.page?redirectUrl=/index.html
+```
+
 ## Configuration Guides
 
 1. [Guide for Keycloak](readme/Keycloak.md)

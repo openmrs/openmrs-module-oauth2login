@@ -47,6 +47,18 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<!--required as we use GP to determine the redirect URI-->
+		<dependency>
+			<groupId>org.openmrs.module</groupId>
+			<artifactId>appframework-api</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>javax.servlet</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 		<!-- <dependency>-->
 		<!-- <groupId>org.springframework.security.oauth</groupId>-->
 		<!-- <artifactId>spring-security-oauth2</artifactId>-->
@@ -131,7 +143,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
 			</plugin>
-		</plugins>
+        </plugins>
 	</build>
 	
 </project>

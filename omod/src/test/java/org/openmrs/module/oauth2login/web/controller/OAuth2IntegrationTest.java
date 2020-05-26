@@ -1,9 +1,9 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
  * the terms of the Healthcare Disclaimer located at http://openmrs.org/license.
- *
+ * <p>
  * Copyright (C) OpenMRS Inc. OpenMRS is a registered trademark and the OpenMRS
  * graphic logo is a trademark of OpenMRS Inc.
  */
@@ -34,6 +34,8 @@ import org.springframework.web.client.RestOperations;
 
 public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTest {
 	
+	private final static String OPENMRS_APPLICATION_DATA_DIRECTORY = "OPENMRS_APPLICATION_DATA_DIRECTORY";
+	
 	/**
 	 * @return The test app data dir name for the current integration test.
 	 */
@@ -46,13 +48,26 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	public OAuth2IntegrationTest() {
 		super();
+		initBaseModuleContext(getAppDataDirName());
 		
-		String path = getClass().getClassLoader().getResource(getAppDataDirName()).getPath();
-		
-		System.setProperty("OPENMRS_APPLICATION_DATA_DIRECTORY", path);
-		
-		this.runtimeProperties.setProperty(OpenmrsConstants.APPLICATION_DATA_DIRECTORY_RUNTIME_PROPERTY, path);
+	}
+	
+	protected static void initBaseModuleContext(String appDataDirName) {
+		initPathInSystemProperties(appDataDirName);
+		BaseModuleContextSensitiveTest.runtimeProperties.setProperty(
+		    OpenmrsConstants.APPLICATION_DATA_DIRECTORY_RUNTIME_PROPERTY,
+		    System.getProperty(OPENMRS_APPLICATION_DATA_DIRECTORY));
 		Context.setRuntimeProperties(runtimeProperties);
+	}
+	
+	public static void initPathInSystemProperties(String appDataDirName) {
+		String path = normalizePath(OAuth2IntegrationTest.class.getClassLoader().getResource(appDataDirName).getPath());
+		System.setProperty(OPENMRS_APPLICATION_DATA_DIRECTORY, path);
+	}
+	
+	private static String normalizePath(String path) {
+		//on windows we get /C:/.... so have to replace the first /
+		return path.replaceFirst("^/(.:/)", "$1");
 	}
 	
 	@Mock
@@ -69,14 +84,15 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	@Override
 	protected Credentials getCredentials() {
-		String propsResPath = Paths.get(getAppDataDirName(), "oauth2.properties").toString();
+		
 		try {
-			oauth2Props = OAuth2BeanFactory.getProperties(Paths.get(getClass().getClassLoader().getResource(propsResPath)
-			        .getPath()));
+			
+			oauth2Props = OAuth2BeanFactory.getProperties(Paths.get(System.getProperty(OPENMRS_APPLICATION_DATA_DIRECTORY),
+			    "oauth2.properties"));
 		}
 		catch (IOException e) {
-			Assert.fail("The OAuth 2 properties could not be obtained for the authentication test.");
 			e.printStackTrace();
+			Assert.fail("The OAuth 2 properties could not be obtained for the authentication test: " + e.getMessage());
 		}
 		
 		String username = OAuth2User.get(getUserInfoJson(), OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_USERNAME, oauth2Props);

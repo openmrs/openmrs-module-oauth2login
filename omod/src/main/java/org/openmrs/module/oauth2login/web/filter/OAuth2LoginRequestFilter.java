@@ -1,4 +1,4 @@
-/**
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public License,
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can
  * obtain one at http://mozilla.org/MPL/2.0/. OpenMRS is also distributed under
@@ -9,27 +9,14 @@
  */
 package org.openmrs.module.oauth2login.web.filter;
 
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
+import org.openmrs.api.context.Context;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.openmrs.api.context.Context;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.context.SecurityContextImpl;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This servlet filter ensures that the only way to authenticate is through the appropriate URI
@@ -46,7 +33,7 @@ public class OAuth2LoginRequestFilter implements Filter {
 	private List<String> moduleURIs;
 	
 	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
+	public void init(FilterConfig filterConfig) {
 		String param = filterConfig.getInitParameter("moduleURIs");
 		moduleURIs = Arrays.asList(param.split(","));
 	}
@@ -65,49 +52,33 @@ public class OAuth2LoginRequestFilter implements Filter {
 		String path = httpRequest.getServletPath();
 		path = (path == null) ? "" : path;
 		
-		// Logout (forwarding)
-		if (path.equalsIgnoreCase("/logout")) {
-			httpResponse.sendRedirect(Paths.get(httpRequest.getContextPath(), "/oauth2logout").toString());
-			return;
-		}
-		
-		// Logout (then re-authentication)
-		if (path.equalsIgnoreCase("/oauth2logout")) {
+		if (!moduleURIs.contains(path)) {
 			
-			Context.logout();
+			// Logout (forwarding)
+			if (isLogoutRequest(path, httpRequest)) {
+				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2logout");
+				return;
+			}
 			
-			logoutFromSpringSecurity(httpRequest, httpResponse);
-			
-			httpResponse.sendRedirect(Paths.get(httpRequest.getContextPath(), "/oauth2login").toString());
-			return;
-		}
-		
-		// Login
-		if (!Context.isAuthenticated() && !moduleURIs.contains(path)) {
-			// non-authenticated requests are forwarded to the module login controller
-			httpResponse.sendRedirect(Paths.get(httpRequest.getContextPath(), "/oauth2login").toString());
-			return;
+			// Login
+			if (!Context.isAuthenticated()) {
+				// non-authenticated requests are forwarded to the module login controller
+				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2login");
+				return;
+			}
 		}
 		
 		chain.doFilter(httpRequest, httpResponse);
 	}
 	
-	protected void logoutFromSpringSecurity(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-	        throws ServletException {
-		HttpSession httpSession = httpRequest.getSession();
-		if (httpSession != null) {
-			SecurityContext securityContext = (SecurityContextImpl) httpSession.getAttribute("SPRING_SECURITY_CONTEXT");
-			if (securityContext != null) {
-				Authentication auth = securityContext.getAuthentication();
-				
-				if (auth.isAuthenticated()) {
-					auth.setAuthenticated(false);
-					new SecurityContextLogoutHandler().logout(httpRequest, httpResponse, auth);
-					SecurityContextHolder.clearContext();
-					httpRequest.logout();
-					httpRequest.getSession().invalidate();
-				}
-			}
-		}
+	private boolean isLogoutRequest(String path, HttpServletRequest httpServletRequest) {
+		//"manual-logout": should be a constant from org.openmrs.module.appui.AppUiConstants
+		//in OpenMRS the path is ../../logout.action : should we use this in this test ?
+		//the attribute seems to be used in any case.
+		return path.equalsIgnoreCase("/logout")
+		//				|| path.equalsIgnoreCase("/oauth2logout")
+		        || (httpServletRequest.getSession() != null && "true".equals(httpServletRequest.getSession().getAttribute(
+		            "manual-logout")));
 	}
+	
 }
