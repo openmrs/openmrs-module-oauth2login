@@ -50,7 +50,7 @@ public class OAuth2BeanFactory {
 		return props;
 	}
 	
-	public static Path getOauth2PropertiesPath() {
+	public static Path getOAuth2PropertiesPath() {
 		Path path = Paths.get(OpenmrsUtil.getApplicationDataDirectory(), "oauth2.properties");
 		if (!path.toFile().exists()) {
 			LOG.error("the property file doesn't exist " + path.toAbsolutePath());
@@ -64,7 +64,7 @@ public class OAuth2BeanFactory {
 	 */
 	@Bean(name = "oauth2.properties")
 	public Properties getOAuth2Properties() throws IOException {
-		return getProperties(getOauth2PropertiesPath());
+		return getProperties(getOAuth2PropertiesPath());
 	}
 	
 	@Bean(name = "oauth2.userInfoUri")

@@ -46,7 +46,7 @@ public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler im
 	@Override
 	public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
 	        throws IOException, ServletException {
-		Properties properties = OAuth2BeanFactory.getProperties(OAuth2BeanFactory.getOauth2PropertiesPath());
+		Properties properties = OAuth2BeanFactory.getProperties(OAuth2BeanFactory.getOAuth2PropertiesPath());
 		String redirectPath = properties.getProperty("logoutUri");
 		//the redirect path can contain a [token] that should be replaced by the aut token
 		if (StringUtils.isNoneBlank(redirectPath) && redirectPath.contains("[token]")) {
