@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -115,14 +117,15 @@ public class OAuth2User {
 	 * @return The list of roles
 	 */
 	public List<String> getRoles(Properties props) {
-
 		String rolesName = get(userInfoJson, MAPPINGS_PFX + PROP_ROLES, props,
-				null);
-		if (rolesName != null) {
-			return Arrays.asList(rolesName.split(","));
-		} else {
-			return new ArrayList<>();
-		}
+				"");
+
+
+
+		return Stream.of(rolesName.split(","))
+				.filter(elem -> StringUtils.isNoneBlank(elem))
+				.map(elem -> new String(elem))
+				.collect(Collectors.toList());
 	}
 	
 	/**
