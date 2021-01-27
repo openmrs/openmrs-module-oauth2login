@@ -24,7 +24,7 @@ public class KeycloakAuthenticationTest extends OAuth2IntegrationTest {
 		return "{\n" + "  \"sub\": \"4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc\",\n" + "  \"email_verified\": true,\n"
 		        + "  \"name\": \"Tommy Atkins\",\n" + "  \"preferred_username\": \"tatkins\",\n"
 		        + "  \"given_name\": \"Tommy\",\n" + "  \"family_name\": \"Atkins\",\n"
-		        + "  \"email\": \"tatkins@example.com\"\n" + "}";
+		        + "  \"email\": \"tatkins@example.com\",\n" + "  \"roles\": \"nurse,doctor\"\n" + "}";
 	}
 	
 	@Override

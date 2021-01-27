@@ -86,7 +86,6 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	protected Credentials getCredentials() {
 		
 		try {
-			
 			oauth2Props = OAuth2BeanFactory.getProperties(Paths.get(System.getProperty(OPENMRS_APPLICATION_DATA_DIRECTORY),
 			    "oauth2.properties"));
 		}

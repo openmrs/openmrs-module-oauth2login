@@ -99,7 +99,7 @@ public class OAuth2User {
 	 * @return The corresponding value from the JSON, an empty String if none is found.
 	 */
 	public static String get(String userInfoJson, String propertyKey, Properties props, String defaultValue) {
-		String propertyValue = props.getProperty(propertyKey);
+		String propertyValue = props.getProperty(propertyKey, null);
 		String res = defaultValue;
 		if (!StringUtils.isEmpty(propertyValue)) {
 			res = JsonPath.read(userInfoJson, "$." + propertyValue);
