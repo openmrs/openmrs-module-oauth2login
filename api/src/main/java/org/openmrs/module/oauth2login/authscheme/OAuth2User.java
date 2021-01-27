@@ -9,6 +9,9 @@
  */
 package org.openmrs.module.oauth2login.authscheme;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +40,8 @@ public class OAuth2User {
 	public final static String PROP_GENDER = "person.gender";
 	
 	public final static String PROP_SYSTEMID = "user.systemId";
+	
+	public static final String PROP_ROLES = "user.roles";
 	
 	private String username;
 	
@@ -100,6 +105,24 @@ public class OAuth2User {
 			res = JsonPath.read(userInfoJson, "$." + propertyValue);
 		}
 		return res;
+	}
+	
+	/**
+	 * Return a roles list based on the OAuth 2 properties mappings.
+	 * 
+	 * @param props The mappings between the user info fields and the corresponding OpenMRS
+	 *            user/person properties.
+	 * @return The list of roles
+	 */
+	public List<String> getRoles(Properties props) {
+
+		String rolesName = get(userInfoJson, MAPPINGS_PFX + PROP_ROLES, props,
+				null);
+		if (rolesName != null) {
+			return Arrays.asList(rolesName.split(","));
+		} else {
+			return new ArrayList<>();
+		}
 	}
 	
 	/**
