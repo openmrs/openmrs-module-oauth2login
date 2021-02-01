@@ -9,8 +9,6 @@
  */
 package org.openmrs.module.oauth2login.authscheme;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.lang.RandomStringUtils;
@@ -58,10 +56,10 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		if (user == null) {
 			
 			user = creds.getOAuth2User().toOpenmrsUser(oauth2Props);
-			List<String> roles = creds.getOAuth2User().getRoles(oauth2Props);
 			
 			try {
-				user = getContextDAO().createUser(user, RandomStringUtils.random(100, true, true), roles);
+				user = getContextDAO().createUser(user, RandomStringUtils.random(100, true, true),
+				    creds.getOAuth2User().getRoleNames(oauth2Props));
 			}
 			catch (Exception e) {
 				throw new ContextAuthenticationException(

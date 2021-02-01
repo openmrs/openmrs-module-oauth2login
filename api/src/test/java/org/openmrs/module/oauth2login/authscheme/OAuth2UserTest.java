@@ -1,72 +1,48 @@
 package org.openmrs.module.oauth2login.authscheme;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.modules.junit4.PowerMockRunner;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 
 import java.util.List;
 import java.util.Properties;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.modules.junit4.PowerMockRunner;
+
 @RunWith(PowerMockRunner.class)
 public class OAuth2UserTest {
-
-    private OAuth2User oAuth2User;
-    Properties props;
-
-    @Before
-    public void setUp() throws Exception {
-
-    }
-
-    @Test
-    public void shouldGetRoles(){
-
-        // Initialize oAuth2User
-        oAuth2User = new OAuth2User("jdoe@example.com", mockUserInfoJsonWithRoles());
-
-        // Mock properties
-        props = new Properties();
-        props.setProperty(OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_ROLES, "roles");
-
-        // Test
-        List<String> roles = oAuth2User.getRoles(props);
-
-        // Verify
-        Assert.assertEquals(2, roles.size());
-        Assert.assertTrue(roles.contains("nurse"));
-        Assert.assertTrue(roles.contains("doctor"));
-    }
-
-    @Test
-    public void shouldNotGetRoles(){
-
-        // Initialize oAuth2User
-        oAuth2User = new OAuth2User("jdoe@example.com", mockUserInfoJsonWithoutRoles());
-
-        // Mock properties
-        props = new Properties();
-
-        // Test
-        List<String> roles = oAuth2User.getRoles(props);
-
-        // Verify
-        Assert.assertEquals(0, roles.size());
-    }
-
-    private String mockUserInfoJsonWithRoles() {
-        return "{\n" + "  \"sub\": \"31a709c3-67f4-4b01-b76c-b39e650c0a41\",\n" + "  \"name\": \"John Doe\",\n"
-                + "  \"given_name\": \"John\",\n" + "  \"family_name\": \"Doe\",\n"
-                + "  \"profile\": \"http://example.com/profile\",\n" + "  \"picture\": \"http://example.com/picture\",\n"
-                + "  \"email\": \"jdoe@example.com\",\n" + "  \"email_verified\": true,\n" + "  \"locale\": \"en\",\n"
-                + "  \"roles\": \"nurse,doctor\"\n" + "}";
-    }
-
-    private String mockUserInfoJsonWithoutRoles() {
-        return "{\n" + "  \"sub\": \"31a709c3-67f4-4b01-b76c-b39e650c0a41\",\n" + "  \"name\": \"John Doe\",\n"
-                + "  \"given_name\": \"John\",\n" + "  \"family_name\": \"Doe\",\n"
-                + "  \"profile\": \"http://example.com/profile\",\n" + "  \"picture\": \"http://example.com/picture\",\n"
-                + "  \"email\": \"jdoe@example.com\",\n" + "  \"email_verified\": true,\n" + "  \"locale\": \"en\"\n" + "}";
-    }
+	
+	private OAuth2User oauth2User;
+	
+	private Properties oauth2Props = new Properties();
+	
+	@Test
+	public void getRoleNames_shouldParseAndTrimRoleNamesWhenMappingIsDefined() {
+		// setup
+		oauth2Props.setProperty(OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_ROLES, "roles");
+		oauth2User = new OAuth2User("jdoe@example.com", "{\"roles\":\"nurse, doctor\"}");
+		
+		// replay
+		List<String> roleNames = oauth2User.getRoleNames(oauth2Props);
+		
+		// verify
+		Assert.assertThat(roleNames, hasSize(2));
+		Assert.assertThat(roleNames, containsInAnyOrder("nurse", "doctor"));
+	}
+	
+	@Test
+	public void getRoleNames_shouldParseToEmptyRoleNamesWhenMappingIsNotDefined() {
+		// setup
+		oauth2Props = new Properties();
+		oauth2User = new OAuth2User("jdoe@example.com", "{\"roles\":\"nurse, doctor\"}");
+		
+		// replay
+		List<String> roleNames = oauth2User.getRoleNames(oauth2Props);
+		
+		// verify
+		Assert.assertThat(roleNames, empty());
+	}
 }
