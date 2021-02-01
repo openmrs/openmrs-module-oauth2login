@@ -57,8 +57,8 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		
 		if (user == null) {
 			
-			user = creds.getOAuth2User().toOpenmrsUser();
-			List<String> roles = creds.getOAuth2User().getRoles();
+			user = creds.getOAuth2User().toOpenmrsUser(oauth2Props);
+			List<String> roles = creds.getOAuth2User().getRoles(oauth2Props);
 			
 			try {
 				user = getContextDAO().createUser(user, RandomStringUtils.random(100, true, true), roles);

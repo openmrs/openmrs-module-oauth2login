@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.openmrs.Person;
 import org.openmrs.PersonName;
 import org.openmrs.User;
@@ -43,13 +45,13 @@ public class OAuth2User {
 	
 	public static final String PROP_ROLES = "user.roles";
 	
+	private String username;
+	
 	private String userInfoJson; // user info as obtained from the OAuth 2 provider
 	
-	private Properties props; // oauth2 Properties
-	
-	public OAuth2User(String userInfoJson, Properties props) {
+	public OAuth2User(String username, String userInfoJson) {
+		this.username = username;
 		this.userInfoJson = userInfoJson;
-		this.props = props;
 	}
 	
 	@Override
@@ -58,15 +60,17 @@ public class OAuth2User {
 	}
 	
 	public String getUsername() {
-		return OAuth2User.get(userInfoJson, MAPPINGS_PFX + PROP_USERNAME, props);
+		return username;
 	}
 	
 	/**
 	 * Converts the OAUth user info into an OpenMRS user based on the OAuth 2 properties mappings.
 	 * 
+	 * @param props The mappings between the user info fields and the corresponding OpenMRS
+	 *            user/person properties.
 	 * @return The OpenMRS {@link User}
 	 */
-	public User toOpenmrsUser() {
+	public User toOpenmrsUser(Properties props) {
 		
 		User user = new User();
 		user.setUsername(getUsername());
@@ -108,9 +112,11 @@ public class OAuth2User {
 	/**
 	 * Return a roles list based on the OAuth 2 properties mappings.
 	 * 
+	 * @param props The mappings between the user info fields and the corresponding OpenMRS
+	 *            user/person properties.
 	 * @return The list of roles
 	 */
-	public List<String> getRoles() {
+	public List<String> getRoles(Properties props) {
 		String rolesName = get(userInfoJson, MAPPINGS_PFX + PROP_ROLES, props,
 				"");
 
