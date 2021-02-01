@@ -124,7 +124,7 @@ public class OAuth2User {
 
 		return Stream.of(rolesName.split(","))
 				.filter(elem -> StringUtils.isNoneBlank(elem))
-				.map(elem -> new String(elem))
+				.map(elem -> new String(elem).trim())
 				.collect(Collectors.toList());
 	}
 	
