@@ -125,6 +125,7 @@ public class OAuth2User {
 	 *            user/person properties.
 	 * @return The list of role names, eg. ["Nurse", "Anaesthesia Assistant"].
 	 */
+
 	public List<String> getRoleNames(Properties props) {
 		String roleNames = get(userInfoJson, MAPPINGS_PFX + PROP_ROLES, props, "");
 		return Stream.of(roleNames.split(","))
