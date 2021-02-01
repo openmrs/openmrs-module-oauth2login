@@ -40,24 +40,23 @@ The authentication is based on the **username**.
 However at first the user might not exist yet in OpenMRS and as a convenience the module will create new OpenMRS users on the fly. This is why a mapping mechanism must exist between the OAuth 2 provider users and the OpenMRS users, in particular to find out what the OpenMRS username should be.
 
 #### Initial set of roles
-During this initial creation a list of roles can be provided to be set to a new user, this is done through the `openmrs.mapping.creationRoles` mapping property that holds a pointer to the user info JSON key whose value is a comma-separated list of OpenMRS role names.
+A list of OpenMRS role can be provided through the user info JSON so that they get assigned to a first time logged in user. This can be done through the `openmrs.mapping.user.roles` mapping property that holds a pointer to the user info JSON key whose value is a comma-separated list of OpenMRS role names.
 
 The user info JSON might look like that:
 ```json
 {
   "sub": "4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc",
-  
   "email": "jdoe@example.com",
-  "creation_roles": "Nurse,Clinical Advisor"
+  "creation_roles": "Nurse, Clinical Advisor"
 }
 ```
-With an OAuth 2 properties mapping set like that:
+With an OAuth 2 properties mapping set as such:
 ```
-openmrs.mapping.creationRoles=creation_roles
+openmrs.mapping.user.roles=creation_roles
 ```
-Where "Nurse" and "Clinical Advisor" are role names in OpenMRS. Roles that cannot be found will just be ignored.
+Where "Nurse" and "Clinical Advisor" are expected to be OpenMRS role _names_. It is important to note that role names that cannot be found in OpenMRS will cause a user creation error, with the consequence that the user will not be able to log into OpenMRS.
 
-Again, this is a convenience to streamline the first login experience with OpenMRS, in order for new user to not be role-less. **This is not an external management of user roles for OpenMRS**.
+This is a convenience to streamline the first login experience with OpenMRS, in order for new user to not be role-less. **This is not an external management of user roles for OpenMRS**.
 
 Finally this convenience can only work when we have control over the what the user info response JSON can return.
 

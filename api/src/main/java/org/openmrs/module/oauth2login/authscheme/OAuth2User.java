@@ -9,23 +9,23 @@
  */
 package org.openmrs.module.oauth2login.authscheme;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.openmrs.Person;
 import org.openmrs.PersonName;
 import org.openmrs.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.jayway.jsonpath.JsonPath;
 
 public class OAuth2User {
+	
+	private final static Logger log = LoggerFactory.getLogger(OAuth2User.class);
 	
 	public final static String MAPPINGS_PFX = "openmrs.mapping.";
 	
@@ -45,22 +45,26 @@ public class OAuth2User {
 	
 	public static final String PROP_ROLES = "user.roles";
 	
-	private String username;
+	private String openmrsUsername;
 	
 	private String userInfoJson; // user info as obtained from the OAuth 2 provider
 	
-	public OAuth2User(String username, String userInfoJson) {
-		this.username = username;
+	/**
+	 * @param openmrsUsername The String that is meant to be the unique OpenMRS username.
+	 * @param userInfoJson The OAuth 2 user info response JSON.
+	 */
+	public OAuth2User(String openmrsUsername, String userInfoJson) {
+		this.openmrsUsername = openmrsUsername;
 		this.userInfoJson = userInfoJson;
 	}
 	
 	@Override
 	public String toString() {
-		return getUsername();
+		return getOpenmrsUsername();
 	}
 	
-	public String getUsername() {
-		return username;
+	public String getOpenmrsUsername() {
+		return openmrsUsername;
 	}
 	
 	/**
@@ -73,7 +77,7 @@ public class OAuth2User {
 	public User toOpenmrsUser(Properties props) {
 		
 		User user = new User();
-		user.setUsername(getUsername());
+		user.setUsername(getOpenmrsUsername());
 		user.setSystemId(get(userInfoJson, MAPPINGS_PFX + PROP_SYSTEMID, props));
 		user.setEmail(get(userInfoJson, MAPPINGS_PFX + PROP_EMAIL, props, null));
 		
@@ -91,12 +95,13 @@ public class OAuth2User {
 	}
 	
 	/**
-	 * Extracts values from the user info JSON based on a one to one mapping provided via a
+	 * Extracts values from the user info JSON based on a one to one mapping defined via the OAuth 2
 	 * properties file.
 	 * 
 	 * @param userInfoJson The OAuth 2 user info response JSON.
 	 * @param propertyKey The property key to look for, eg "openmrs.mapping.user.username".
-	 * @param props The mapping between properties keys and their mapping.
+	 * @param props The mappings between the user info fields and the corresponding OpenMRS
+	 *            user/person properties.
 	 * @param defaultValue The value to default to if no property could be found.
 	 * @return The corresponding value from the JSON, an empty String if none is found.
 	 */
@@ -105,26 +110,26 @@ public class OAuth2User {
 		String res = defaultValue;
 		if (!StringUtils.isEmpty(propertyValue)) {
 			res = JsonPath.read(userInfoJson, "$." + propertyValue);
+		} else {
+			log.warn("There was an attempt to read the value of " + propertyKey
+			        + " out of the user info JSON, but the JSON property could not be found.");
 		}
 		return res;
 	}
 	
 	/**
-	 * Return a roles list based on the OAuth 2 properties mappings.
+	 * Convenience method that retrieves the list of role names from the corresponding custom OAuth
+	 * 2 property CSV value.
 	 * 
 	 * @param props The mappings between the user info fields and the corresponding OpenMRS
 	 *            user/person properties.
-	 * @return The list of roles
+	 * @return The list of role names, eg. ["Nurse", "Anaesthesia Assistant"].
 	 */
-	public List<String> getRoles(Properties props) {
-		String rolesName = get(userInfoJson, MAPPINGS_PFX + PROP_ROLES, props,
-				"");
-
-
-
-		return Stream.of(rolesName.split(","))
-				.filter(elem -> StringUtils.isNoneBlank(elem))
-				.map(elem -> new String(elem))
+	public List<String> getRoleNames(Properties props) {
+		String roleNames = get(userInfoJson, MAPPINGS_PFX + PROP_ROLES, props, "");
+		return Stream.of(roleNames.split(","))
+				.filter(n -> StringUtils.isNoneBlank(n))
+				.map(n -> StringUtils.trim(n))
 				.collect(Collectors.toList());
 	}
 	

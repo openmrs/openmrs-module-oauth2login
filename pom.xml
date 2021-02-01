@@ -27,8 +27,8 @@
 	</scm>
 
 	<properties>
-		<openmrsPlatformVersion>2.2.1-SNAPSHOT</openmrsPlatformVersion>
-		<openmrsAppframeworkVersion>2.15.0-SNAPSHOT</openmrsAppframeworkVersion>
+		<openmrsPlatformVersion>2.3.0</openmrsPlatformVersion>
+		<openmrsAppframeworkVersion>2.15.0</openmrsAppframeworkVersion>
 		<javax.servletVersion>2.0</javax.servletVersion>
 		<javax.servlet-apiVersion>3.0.1</javax.servlet-apiVersion>
 		<spring-security-oauth2Version>2.3.5.RELEASE</spring-security-oauth2Version>
