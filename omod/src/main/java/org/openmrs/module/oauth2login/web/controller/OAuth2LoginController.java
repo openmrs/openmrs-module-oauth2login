@@ -84,15 +84,15 @@ public class OAuth2LoginController {
 			throw ex;
 		}
 		
-		String username = getUsername(userInfoJson);
-		if (StringUtils.isEmpty(username)) {
+		OAuth2User user = new OAuth2User(userInfoJson, oauth2Props);
+		
+		if (StringUtils.isEmpty(user.getUsername())) {
 			throw new ContextAuthenticationException(
 			        "The user info did not point to a valid or usable username to authenticate.");
 		}
 		
-		OAuth2User user = new OAuth2User(username, userInfoJson);
 		Authenticated authenticated = Context.authenticate(new OAuth2TokenCredentials(user));
-		log.info("The user '" + username + "' was successfully authenticated with OpenMRS with user "
+		log.info("The user '" + user.getUsername() + "' was successfully authenticated with OpenMRS with user "
 		        + authenticated.getUser());
 		//		authenticateWithSpringSecurity(getToken());
 		
@@ -109,10 +109,6 @@ public class OAuth2LoginController {
 			}
 		}
 		return StringUtils.defaultIfBlank(redirect, "/");
-	}
-	
-	public String getUsername(String userInfoJson) {
-		return OAuth2User.get(userInfoJson, OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_USERNAME, oauth2Props);
 	}
 	
 	private void authenticateWithSpringSecurity() {

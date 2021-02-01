@@ -95,7 +95,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 		}
 		
 		String username = OAuth2User.get(getUserInfoJson(), OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_USERNAME, oauth2Props);
-		return new OAuth2TokenCredentials(new OAuth2User(username, getUserInfoJson()));
+		return new OAuth2TokenCredentials(new OAuth2User(getUserInfoJson(), oauth2Props));
 	}
 	
 	@Before
