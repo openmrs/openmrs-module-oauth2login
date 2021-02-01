@@ -36,6 +36,6 @@ public class OAuth2TokenCredentials implements Credentials {
 	
 	@Override
 	public String getClientName() {
-		return user.getUsername();
+		return user.getOpenmrsUsername();
 	}
 }
