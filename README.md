@@ -54,7 +54,7 @@ With an OAuth 2 properties mapping set as such:
 ```
 openmrs.mapping.user.roles=creation_roles
 ```
-Where "Nurse" and "Clinical Advisor" are expected to be OpenMRS role _names_. It is important to note that role names that cannot be found in OpenMRS will cause a user creation error, with the consequence that the user will not be able to log into OpenMRS.
+Where "Nurse" and "Clinical Advisor" are expected to be OpenMRS role _names_. Those role names help fetch OpenMRS roles that are then assigned to the user. All the role names that do not point to existing OpenMRS roles are skipped.
 
 This is a convenience to streamline the first login experience with OpenMRS, in order for new user to not be role-less. **This is not an external management of user roles for OpenMRS**.
 
