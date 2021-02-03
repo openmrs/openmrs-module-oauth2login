@@ -45,4 +45,17 @@ public class OAuth2UserTest {
 		// verify
 		Assert.assertThat(roleNames, empty());
 	}
+	
+	@Test
+	public void getRoleNames_shouldParseToEmptyRoleNamesWhenNoneInUserInfo() {
+		// setup
+		oauth2Props.setProperty(OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_ROLES, "roles");
+		oauth2User = new OAuth2User("jdoe@example.com", "{}");
+		
+		// replay
+		List<String> roleNames = oauth2User.getRoleNames(oauth2Props);
+		
+		// verify
+		Assert.assertThat(roleNames, empty());
+	}
 }

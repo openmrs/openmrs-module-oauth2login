@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 
 public class OAuth2User {
 	
@@ -106,14 +107,22 @@ public class OAuth2User {
 	 * @return The corresponding value from the JSON, an empty String if none is found.
 	 */
 	public static String get(String userInfoJson, String propertyKey, Properties props, String defaultValue) {
-		String propertyValue = props.getProperty(propertyKey, null);
 		String res = defaultValue;
-		if (!StringUtils.isEmpty(propertyValue)) {
-			res = JsonPath.read(userInfoJson, "$." + propertyValue);
-		} else {
+		
+		String propertyValue = props.getProperty(propertyKey, null);
+		if (StringUtils.isEmpty(propertyValue)) {
 			log.warn("There was an attempt to read the value of " + propertyKey
 			        + " out of the user info JSON, but the JSON property could not be found.");
+			return res;
 		}
+		
+		try {
+			res = JsonPath.read(userInfoJson, "$." + propertyValue);
+		}
+		catch (PathNotFoundException e) {
+			log.error("There was an error when reading the the JSON path $." + propertyValue + " in the user info JSON.", e);
+		}
+		
 		return res;
 	}
 	
