@@ -23,6 +23,7 @@ import org.openmrs.api.context.Credentials;
 import org.openmrs.api.context.Daemon;
 import org.openmrs.api.context.DaoAuthenticationScheme;
 import org.openmrs.module.DaemonToken;
+import org.openmrs.module.DaemonTokenAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -52,6 +53,7 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	}
 	
 	@Override
+	//@Transactional
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
 		
 		OAuth2TokenCredentials creds;
@@ -66,19 +68,17 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		
 		if (user != null) {
-			updateUser(user);
+			updateUser(user, creds.getOAuth2User());
 		} else {
 			createUser(creds.getOAuth2User(), credentials.getClientName());
 		}
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
 	
-	private void updateUser(User user) {
+	private void updateUser(User user, OAuth2User oAuth2User) {
 		
-		user.getPerson().getPersonName().setGivenName("Test");
-		
-		UpdateUserTask task = new UpdateUserTask(userService, user);
-		Daemon.runInDaemonThreadAndWait(task, daemonToken);
+		UpdateUserTask task = new UpdateUserTask(userService, oAuth2User.updateOpenmrsUser(user, oauth2Props));
+		Daemon.runInDaemonThread(task, daemonToken);
 	}
 	
 	private void createUser(OAuth2User oAuth2User, String clientName) {

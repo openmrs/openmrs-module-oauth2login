@@ -75,23 +75,45 @@ public class OAuth2User {
 	 * @return The OpenMRS {@link User}
 	 */
 	public User toOpenmrsUser(Properties props) {
+		return updateOpenmrsUser(null, props);
+	}
+	
+	/**
+	 * Update the OpenMRS user based on the OAUth user info and OAuth 2 properties mappings.
+	 * 
+	 * @param openmrsUser The OpenMRS user to be update base json.
+	 * @param props The mappings between the user info fields and the corresponding OpenMRS
+	 *            user/person properties.
+	 * @return The OpenMRS {@link User}
+	 */
+	public User updateOpenmrsUser(User openmrsUser, Properties props) {
 		
-		User user = new User();
-		user.setUsername(getOpenmrsUsername());
-		user.setSystemId(get(userInfoJson, MAPPINGS_PFX + PROP_SYSTEMID, props));
-		user.setEmail(get(userInfoJson, MAPPINGS_PFX + PROP_EMAIL, props, null));
+		Person person;
+		PersonName name;
 		
-		Person person = new Person();
+		if (openmrsUser == null) {
+			openmrsUser = new User();
+			person = new Person();
+			name = new PersonName();
+		} else {
+			person = openmrsUser.getPerson();
+			name = person.getPersonName();
+		}
+		
+		openmrsUser.setUsername(getOpenmrsUsername());
+		openmrsUser.setSystemId(get(userInfoJson, MAPPINGS_PFX + PROP_SYSTEMID, props));
+		openmrsUser.setEmail(get(userInfoJson, MAPPINGS_PFX + PROP_EMAIL, props, null));
+		
 		person.setGender(get(userInfoJson, MAPPINGS_PFX + PROP_GENDER, props, "n/a"));
-		PersonName name = new PersonName();
+		
 		name.setGivenName(get(userInfoJson, MAPPINGS_PFX + PROP_GIVEN_NAME, props));
 		name.setMiddleName(get(userInfoJson, MAPPINGS_PFX + PROP_MIDDLE_NAME, props));
 		name.setFamilyName(get(userInfoJson, MAPPINGS_PFX + PROP_FAMILY_NAME, props));
 		
-		user.setPerson(person);
-		user.addName(name);
+		openmrsUser.setPerson(person);
+		openmrsUser.addName(name);
 		
-		return user;
+		return openmrsUser;
 	}
 	
 	/**
@@ -125,7 +147,7 @@ public class OAuth2User {
 	 *            user/person properties.
 	 * @return The list of role names, eg. ["Nurse", "Anaesthesia Assistant"].
 	 */
-
+	
 	public List<String> getRoleNames(Properties props) {
 		String roleNames = get(userInfoJson, MAPPINGS_PFX + PROP_ROLES, props, "");
 		return Stream.of(roleNames.split(","))

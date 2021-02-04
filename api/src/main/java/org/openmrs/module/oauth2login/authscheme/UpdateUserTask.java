@@ -16,11 +16,23 @@ public class UpdateUserTask implements Runnable {
 	
 	@Override
 	public void run() {
-		this.userService.saveUser(user);
+		User daemonUser = this.userService.getUser(user.getUserId());
+		this.userService.saveUser(updateUserInfo(daemonUser, user));
 	}
 	
-	public void setUser(User user) {
-		this.user = user;
+	/**
+	 * Update user information with base on another user
+	 * 
+	 * @param userToUpdate user to update with info
+	 * @param userToCopy user to get info from
+	 * @return the user updated
+	 */
+	private User updateUserInfo(User userToUpdate, User userToCopy) {
+		userToUpdate.getPerson().getPersonName().setGivenName(userToCopy.getPerson().getPersonName().getGivenName());
+		userToUpdate.getPerson().getPersonName().setMiddleName(userToCopy.getPerson().getPersonName().getMiddleName());
+		userToUpdate.getPerson().getPersonName().setFamilyName(userToCopy.getPerson().getPersonName().getFamilyName());
+		userToUpdate.getPerson().setGender(userToCopy.getPerson().getGender());
+		userToUpdate.setEmail(userToCopy.getEmail());
+		return userToUpdate;
 	}
-	
 }
