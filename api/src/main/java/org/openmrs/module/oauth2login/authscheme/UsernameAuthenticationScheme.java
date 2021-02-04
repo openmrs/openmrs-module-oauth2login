@@ -9,8 +9,6 @@
  */
 package org.openmrs.module.oauth2login.authscheme;
 
-import java.util.Properties;
-
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,8 +18,6 @@ import org.openmrs.api.context.BasicAuthenticated;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.api.context.Credentials;
 import org.openmrs.api.context.DaoAuthenticationScheme;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,13 +27,6 @@ import org.springframework.stereotype.Component;
 public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	
 	protected Log log = LogFactory.getLog(getClass());
-	
-	private Properties oauth2Props;
-	
-	@Autowired
-	public void setOAuth2Properties(@Qualifier("oauth2.properties") Properties oauth2Props) {
-		this.oauth2Props = oauth2Props;
-	}
 	
 	@Override
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
@@ -55,11 +44,8 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		
 		if (user == null) {
 			
-			user = creds.getOAuth2User().toOpenmrsUser(oauth2Props);
-			
 			try {
-				user = getContextDAO().createUser(user, RandomStringUtils.random(100, true, true),
-				    creds.getOAuth2User().getRoleNames(oauth2Props));
+				user = getContextDAO().createUser(creds.getUserInfo().getOpenmrsUser(), RandomStringUtils.random(100, true, true), creds.getUserInfo().getRoleNames());
 			}
 			catch (Exception e) {
 				throw new ContextAuthenticationException(
