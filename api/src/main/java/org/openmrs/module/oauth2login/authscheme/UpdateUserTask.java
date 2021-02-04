@@ -7,35 +7,34 @@ public class UpdateUserTask implements Runnable {
 	
 	private UserService userService;
 	
-	OAuth2TokenCredentials credentials;
+	private UserInfo userInfo;
 	
-	public UpdateUserTask(UserService userService, OAuth2TokenCredentials credentials) {
+	public UpdateUserTask(UserService userService, UserInfo userInfo) {
 		this.userService = userService;
-		this.credentials = credentials;
+		this.userInfo = userInfo;
 	}
 	
 	@Override
 	public void run() {
-		User daemonUser = this.userService.getUserByUsername(credentials.getUserInfo().getUsername());
-		this.userService.saveUser(updateUserInfo(daemonUser, credentials));
+		User user = userService.getUserByUsername(userInfo.getUsername());
+		userService.saveUser(updated(user));
 	}
 	
 	/**
-	 * Update user information with base on another user
+	 * Returns the updated user as per the user info.
 	 * 
-	 * @param userToUpdate user to update with info
-	 * @param credentials user credentials
-	 * @return the user updated
+	 * @param user The user to update
+	 * @return The updated user.
 	 */
-	private User updateUserInfo(User userToUpdate, OAuth2TokenCredentials credentials) {
-		userToUpdate.getPerson().getPersonName()
-		        .setGivenName(credentials.getUserInfo().getOpenmrsUser().getPersonName().getGivenName());
-		userToUpdate.getPerson().getPersonName()
-		        .setMiddleName(credentials.getUserInfo().getOpenmrsUser().getPersonName().getMiddleName());
-		userToUpdate.getPerson().getPersonName()
-		        .setFamilyName(credentials.getUserInfo().getOpenmrsUser().getPersonName().getFamilyName());
-		userToUpdate.getPerson().setGender(credentials.getUserInfo().getOpenmrsUser().getPerson().getGender());
-		userToUpdate.setEmail(credentials.getUserInfo().getOpenmrsUser().getEmail());
-		return userToUpdate;
+	private User updated(User user) {
+		
+		user.setEmail(userInfo.getOpenmrsUser().getEmail());
+		
+		user.getPerson().getPersonName().setGivenName(userInfo.getOpenmrsUser().getPersonName().getGivenName());
+		user.getPerson().getPersonName().setMiddleName(userInfo.getOpenmrsUser().getPersonName().getMiddleName());
+		user.getPerson().getPersonName().setFamilyName(userInfo.getOpenmrsUser().getPersonName().getFamilyName());
+		user.getPerson().setGender(userInfo.getOpenmrsUser().getPerson().getGender());
+		
+		return user;
 	}
 }
