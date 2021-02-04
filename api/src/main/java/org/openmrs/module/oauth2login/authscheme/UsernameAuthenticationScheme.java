@@ -67,10 +67,10 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		
-		if (user != null) {
-			updateUser(user, creds.getOAuth2User());
-		} else {
+		if (user == null) {
 			createUser(creds.getOAuth2User(), credentials.getClientName());
+		} else {
+			updateUser(user, creds.getOAuth2User());
 		}
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
