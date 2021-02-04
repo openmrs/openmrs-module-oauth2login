@@ -11,7 +11,6 @@ package org.openmrs.module.oauth2login.web.controller;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -20,20 +19,17 @@ import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.api.context.Authenticated;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
-import org.openmrs.module.oauth2login.authscheme.OAuth2User;
+import org.openmrs.module.oauth2login.authscheme.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.client.resource.UserRedirectRequiredException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -64,55 +60,46 @@ public class OAuth2LoginController {
 	}
 	
 	@RequestMapping(value = "/oauth2login", method = GET)
-	public ModelAndView login() throws RestClientException, IOException, URISyntaxException {
-		//must do to be able to ask for oauth authentication:
+	public ModelAndView login() {
+		
 		authenticateWithSpringSecurity();
-		if (log.isInfoEnabled()) {
-			log.info("try login via userInfoUri: " + userInfoUri);
-		}
-		String userInfoJson;
+		
+		String userInfoJson = "{}";
 		try {
 			userInfoJson = restTemplate.getForObject(new URI(userInfoUri), String.class);
 		}
-		catch (UserRedirectRequiredException redirectRequiredException) {
-			log.info("user should be redirected to IDP login page");
-			throw redirectRequiredException;
-		}
-		catch (Exception ex) {
-			//just to have the error in openMRS logs.
-			log.error("can't validate oauth2 login", ex);
-			throw ex;
+		catch (URISyntaxException e) {
+			throw new RuntimeException(e);
 		}
 		
-		String username = getUsername(userInfoJson);
-		if (StringUtils.isEmpty(username)) {
-			throw new ContextAuthenticationException(
-			        "The user info did not point to a valid or usable username to authenticate.");
+		final UserInfo userInfo = new UserInfo(oauth2Props, userInfoJson);
+		try {
+			Context.authenticate(new OAuth2TokenCredentials(userInfo));
+		}
+		catch (ContextAuthenticationException e) {
+			throw new RuntimeException("The user '" + userInfo + "' could not be authenticated with the identity provider.",
+			        e);
+		}
+		finally {
+			log.info("The user '" + userInfo + "' was successfully authenticated with the identity provider.");
 		}
 		
-		OAuth2User user = new OAuth2User(username, userInfoJson);
-		Authenticated authenticated = Context.authenticate(new OAuth2TokenCredentials(user));
-		log.info("The user '" + username + "' was successfully authenticated with OpenMRS with user "
-		        + authenticated.getUser());
-		//		authenticateWithSpringSecurity(getToken());
-		
-		return new ModelAndView("redirect:" + getRedirectUrl());
+		return new ModelAndView("redirect:" + getRedirectUri());
 	}
 	
-	private String getRedirectUrl() {
-		String redirect = Context.getAdministrationService().getGlobalProperty("oauth2login.redirectUriAfterLogin");
-		if (log.isInfoEnabled()) {
-			if (StringUtils.isEmpty(redirect)) {
-				log.info("Redirect user to /. Could be changed by creating the Global Property oauth2login.redirectUriAfterLogin");
-			} else {
-				log.info("Redirect user to " + redirect + " as defined by the GP oauth2login.redirectUriAfterLogin");
-			}
+	private String getRedirectUri() {
+		final String gpRedirectUri = "oauth2login.redirectUriAfterLogin";
+		
+		String redirectUri = Context.getAdministrationService().getGlobalProperty(gpRedirectUri);
+		final String defaultRedirectUri = "/";
+		if (StringUtils.isEmpty(redirectUri)) {
+			log.info("Redirecting user to the default URI '" + defaultRedirectUri
+			        + "'. This can be changed through the global property '" + gpRedirectUri + "'.");
+		} else {
+			log.info("Redirecting user to '" + redirectUri + "' as defined by the global property '" + gpRedirectUri + "'.");
 		}
-		return StringUtils.defaultIfBlank(redirect, "/");
-	}
-	
-	public String getUsername(String userInfoJson) {
-		return OAuth2User.get(userInfoJson, OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_USERNAME, oauth2Props);
+		
+		return StringUtils.defaultIfBlank(redirectUri, defaultRedirectUri);
 	}
 	
 	private void authenticateWithSpringSecurity() {

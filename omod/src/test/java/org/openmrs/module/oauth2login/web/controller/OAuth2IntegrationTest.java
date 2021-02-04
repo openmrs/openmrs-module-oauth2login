@@ -25,7 +25,7 @@ import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.Credentials;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
-import org.openmrs.module.oauth2login.authscheme.OAuth2User;
+import org.openmrs.module.oauth2login.authscheme.UserInfo;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.openmrs.util.OpenmrsConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,8 +94,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 			Assert.fail("The OAuth 2 properties could not be obtained for the authentication test: " + e.getMessage());
 		}
 		
-		String username = OAuth2User.get(getUserInfoJson(), OAuth2User.MAPPINGS_PFX + OAuth2User.PROP_USERNAME, oauth2Props);
-		return new OAuth2TokenCredentials(new OAuth2User(username, getUserInfoJson()));
+		return new OAuth2TokenCredentials(new UserInfo(oauth2Props, getUserInfoJson()));
 	}
 	
 	@Before

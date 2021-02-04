@@ -9,8 +9,6 @@
  */
 package org.openmrs.module.oauth2login.authscheme;
 
-import java.util.Properties;
-
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,23 +33,7 @@ import org.springframework.stereotype.Component;
 public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	
 	protected Log log = LogFactory.getLog(getClass());
-	
-	private DaemonToken daemonToken;
-	
-	private Properties oauth2Props;
-	
-	@Autowired
-	private UserService userService;
-	
-	@Autowired
-	public void setOAuth2Properties(@Qualifier("oauth2.properties") Properties oauth2Props) {
-		this.oauth2Props = oauth2Props;
-	}
-	
-	public void setDaemonToken(DaemonToken daemonToken) {
-		this.daemonToken = daemonToken;
-	}
-	
+
 	@Override
 	//@Transactional
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
@@ -68,31 +50,17 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		
 		if (user == null) {
-			createUser(creds.getOAuth2User(), credentials.getClientName());
-		} else {
-			updateUser(user, creds.getOAuth2User());
+			
+			try {
+				user = getContextDAO().createUser(creds.getUserInfo().getOpenmrsUser(), RandomStringUtils.random(100, true, true), creds.getUserInfo().getRoleNames());
+			}
+			catch (Exception e) {
+				throw new ContextAuthenticationException(
+				        "The credentials provided pointed to a user that did not exist yet in OpenMRS: '"
+				                + credentials.getClientName() + "'. The user creation was attempted but has failed. ", e);
+			}
 		}
+		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
-	
-	private void updateUser(User user, OAuth2User oAuth2User) {
-		
-		UpdateUserTask task = new UpdateUserTask(userService, oAuth2User.updateOpenmrsUser(user, oauth2Props));
-		Daemon.runInDaemonThread(task, daemonToken);
-	}
-	
-	private void createUser(OAuth2User oAuth2User, String clientName) {
-		User user = oAuth2User.toOpenmrsUser(oauth2Props);
-		
-		try {
-			user = getContextDAO().createUser(user, RandomStringUtils.random(100, true, true),
-			    oAuth2User.getRoleNames(oauth2Props));
-		}
-		catch (Exception e) {
-			throw new ContextAuthenticationException(
-			        "The credentials provided pointed to a user that did not exist yet in OpenMRS: '" + clientName
-			                + "'. The user creation was attempted but has failed. ", e);
-		}
-	}
-	
 }
