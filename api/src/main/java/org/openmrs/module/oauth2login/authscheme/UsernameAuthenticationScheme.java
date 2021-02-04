@@ -33,7 +33,12 @@ import org.springframework.stereotype.Component;
 public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	
 	protected Log log = LogFactory.getLog(getClass());
-
+	
+	private DaemonToken daemonToken;
+	
+	@Autowired
+	private UserService userService;
+	
 	@Override
 	//@Transactional
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
@@ -50,17 +55,33 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		
 		if (user == null) {
-			
-			try {
-				user = getContextDAO().createUser(creds.getUserInfo().getOpenmrsUser(), RandomStringUtils.random(100, true, true), creds.getUserInfo().getRoleNames());
-			}
-			catch (Exception e) {
-				throw new ContextAuthenticationException(
-				        "The credentials provided pointed to a user that did not exist yet in OpenMRS: '"
-				                + credentials.getClientName() + "'. The user creation was attempted but has failed. ", e);
-			}
+			createUser(creds);
+		} else {
+			updateUser(user, creds);
 		}
 		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
+	}
+	
+	private void updateUser(User user, OAuth2TokenCredentials creds) {
+		
+		UpdateUserTask task = new UpdateUserTask(userService, creds);
+		Daemon.runInDaemonThread(task, daemonToken);
+	}
+	
+	private void createUser(OAuth2TokenCredentials creds) {
+		try {
+			User user = getContextDAO().createUser(creds.getUserInfo().getOpenmrsUser(),
+			    RandomStringUtils.random(100, true, true), creds.getUserInfo().getRoleNames());
+		}
+		catch (Exception e) {
+			throw new ContextAuthenticationException(
+			        "The credentials provided pointed to a user that did not exist yet in OpenMRS: '"
+			                + creds.getClientName() + "'. The user creation was attempted but has failed. ", e);
+		}
+	}
+	
+	public void setDaemonToken(DaemonToken daemonToken) {
+		this.daemonToken = daemonToken;
 	}
 }

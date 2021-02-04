@@ -7,32 +7,35 @@ public class UpdateUserTask implements Runnable {
 	
 	private UserService userService;
 	
-	private User user;
+	OAuth2TokenCredentials credentials;
 	
-	public UpdateUserTask(UserService userService, User user) {
+	public UpdateUserTask(UserService userService, OAuth2TokenCredentials credentials) {
 		this.userService = userService;
-		this.user = user;
+		this.credentials = credentials;
 	}
 	
 	@Override
 	public void run() {
-		User daemonUser = this.userService.getUser(user.getUserId());
-		this.userService.saveUser(updateUserInfo(daemonUser, user));
+		User daemonUser = this.userService.getUserByUsername(credentials.getUserInfo().getUsername());
+		this.userService.saveUser(updateUserInfo(daemonUser, credentials));
 	}
 	
 	/**
 	 * Update user information with base on another user
 	 * 
 	 * @param userToUpdate user to update with info
-	 * @param userToCopy user to get info from
+	 * @param credentials user credentials
 	 * @return the user updated
 	 */
-	private User updateUserInfo(User userToUpdate, User userToCopy) {
-		userToUpdate.getPerson().getPersonName().setGivenName(userToCopy.getPerson().getPersonName().getGivenName());
-		userToUpdate.getPerson().getPersonName().setMiddleName(userToCopy.getPerson().getPersonName().getMiddleName());
-		userToUpdate.getPerson().getPersonName().setFamilyName(userToCopy.getPerson().getPersonName().getFamilyName());
-		userToUpdate.getPerson().setGender(userToCopy.getPerson().getGender());
-		userToUpdate.setEmail(userToCopy.getEmail());
+	private User updateUserInfo(User userToUpdate, OAuth2TokenCredentials credentials) {
+		userToUpdate.getPerson().getPersonName()
+		        .setGivenName(credentials.getUserInfo().getOpenmrsUser().getPersonName().getGivenName());
+		userToUpdate.getPerson().getPersonName()
+		        .setMiddleName(credentials.getUserInfo().getOpenmrsUser().getPersonName().getMiddleName());
+		userToUpdate.getPerson().getPersonName()
+		        .setFamilyName(credentials.getUserInfo().getOpenmrsUser().getPersonName().getFamilyName());
+		userToUpdate.getPerson().setGender(credentials.getUserInfo().getOpenmrsUser().getPerson().getGender());
+		userToUpdate.setEmail(credentials.getUserInfo().getOpenmrsUser().getEmail());
 		return userToUpdate;
 	}
 }
