@@ -55,17 +55,19 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		if (user == null) {
+			//			user = createUser(creds.getUserInfo());
 			createUser(creds.getUserInfo());
 		} else {
+			//			user = updateUser(user, creds.getUserInfo());
 			updateUser(user, creds.getUserInfo());
 		}
 		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
 	
-	private void createUser(UserInfo userInfo) throws ContextAuthenticationException {
+	private User createUser(UserInfo userInfo) throws ContextAuthenticationException {
 		try {
-			getContextDAO().createUser(userInfo.getOpenmrsUser(), RandomStringUtils.random(100, true, true),
+			return getContextDAO().createUser(userInfo.getOpenmrsUser(), RandomStringUtils.random(100, true, true),
 			    userInfo.getRoleNames());
 		}
 		catch (Exception e) {
@@ -73,7 +75,9 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		}
 	}
 	
-	private void updateUser(User user, UserInfo userInfo) {
-		Daemon.runInDaemonThread(new UpdateUserTask(userService, userInfo), daemonToken);
+	private User updateUser(User user, UserInfo userInfo) {
+		UpdateUserTask task = new UpdateUserTask(userService, userInfo);
+		Daemon.runInDaemonThreadAndWait(task, daemonToken);
+		return task.getUpdatedUser();
 	}
 }

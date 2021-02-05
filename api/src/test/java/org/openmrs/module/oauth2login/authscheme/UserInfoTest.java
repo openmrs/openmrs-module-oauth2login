@@ -24,21 +24,21 @@ public class UserInfoTest {
 	public void getRoleNames_shouldParseAndTrimRoleNamesWhenMappingIsDefined() {
 		// setup
 		oauth2Props.setProperty(PROP_ROLES, "roles");
-		userInfo = new UserInfo(oauth2Props, "{\"roles\":\"nurse, doctor\"}");
+		userInfo = new UserInfo(oauth2Props, "{\"roles\":\"Nurse, Doctor\"}");
 		
 		// replay
 		List<String> roleNames = userInfo.getRoleNames();
 		
 		// verify
 		Assert.assertThat(roleNames, hasSize(2));
-		Assert.assertThat(roleNames, containsInAnyOrder("nurse", "doctor"));
+		Assert.assertThat(roleNames, containsInAnyOrder("Nurse", "Doctor"));
 	}
 	
 	@Test
 	public void getRoleNames_shouldParseToEmptyRoleNamesWhenMappingIsNotDefined() {
 		// setup
 		oauth2Props = new Properties();
-		userInfo = new UserInfo(oauth2Props, "{\"roles\":\"nurse, doctor\"}");
+		userInfo = new UserInfo(oauth2Props, "{\"roles\":\"Nurse, Doctor\"}");
 		
 		// replay
 		List<String> roleNames = userInfo.getRoleNames();

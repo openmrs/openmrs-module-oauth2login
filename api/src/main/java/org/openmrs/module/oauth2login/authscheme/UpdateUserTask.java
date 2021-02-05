@@ -1,5 +1,7 @@
 package org.openmrs.module.oauth2login.authscheme;
 
+import java.util.stream.Collectors;
+
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 
@@ -9,15 +11,21 @@ public class UpdateUserTask implements Runnable {
 	
 	private UserInfo userInfo;
 	
+	private User user;
+	
 	public UpdateUserTask(UserService userService, UserInfo userInfo) {
 		this.userService = userService;
 		this.userInfo = userInfo;
 	}
 	
+	public User getUpdatedUser() {
+		return user;
+	}
+	
 	@Override
 	public void run() {
-		User user = userService.getUserByUsername(userInfo.getUsername());
-		userService.saveUser(updated(user));
+		user = userService.getUserByUsername(userInfo.getUsername());
+		user = userService.saveUser(updated(user));
 	}
 	
 	/**
@@ -29,6 +37,7 @@ public class UpdateUserTask implements Runnable {
 	private User updated(User user) {
 		
 		user.setEmail(userInfo.getOpenmrsUser().getEmail());
+		user.setRoles(userInfo.getRoleNames().stream().map(roleName -> userService.getRole(roleName)).collect(Collectors.toSet()));
 		
 		user.getPerson().getPersonName().setGivenName(userInfo.getOpenmrsUser().getPersonName().getGivenName());
 		user.getPerson().getPersonName().setMiddleName(userInfo.getOpenmrsUser().getPersonName().getMiddleName());
