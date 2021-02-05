@@ -21,15 +21,13 @@ import org.openmrs.api.context.Credentials;
 import org.openmrs.api.context.Daemon;
 import org.openmrs.api.context.DaoAuthenticationScheme;
 import org.openmrs.module.DaemonToken;
-import org.openmrs.module.DaemonTokenAware;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
  * A scheme that authenticates with OpenMRS based on the 'username'.
  */
-@Component("usernameAuthenticationScheme")
+@Component("oauth2login.usernameAuthenticationScheme")
 public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	
 	protected Log log = LogFactory.getLog(getClass());
@@ -39,8 +37,11 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	@Autowired
 	private UserService userService;
 	
+	public void setDaemonToken(DaemonToken daemonToken) {
+		this.daemonToken = daemonToken;
+	}
+	
 	@Override
-	//@Transactional
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
 		
 		OAuth2TokenCredentials creds;
@@ -48,40 +49,31 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 			creds = (OAuth2TokenCredentials) credentials;
 		}
 		catch (ClassCastException e) {
-			throw new ContextAuthenticationException(
-			        "The credentials provided did not match those needed for the authentication scheme.", e);
+			throw new ContextAuthenticationException("The credentials provided did not match those needed for the "
+			        + getClass().getSimpleName() + " authentication scheme.", e);
 		}
 		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
-		
 		if (user == null) {
-			createUser(creds);
+			createUser(creds.getUserInfo());
 		} else {
-			updateUser(user, creds);
+			updateUser(user, creds.getUserInfo());
 		}
 		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
 	
-	private void updateUser(User user, OAuth2TokenCredentials creds) {
-		
-		UpdateUserTask task = new UpdateUserTask(userService, creds);
-		Daemon.runInDaemonThread(task, daemonToken);
-	}
-	
-	private void createUser(OAuth2TokenCredentials creds) {
+	private void createUser(UserInfo userInfo) throws ContextAuthenticationException {
 		try {
-			User user = getContextDAO().createUser(creds.getUserInfo().getOpenmrsUser(),
-			    RandomStringUtils.random(100, true, true), creds.getUserInfo().getRoleNames());
+			getContextDAO().createUser(userInfo.getOpenmrsUser(), RandomStringUtils.random(100, true, true),
+			    userInfo.getRoleNames());
 		}
 		catch (Exception e) {
-			throw new ContextAuthenticationException(
-			        "The credentials provided pointed to a user that did not exist yet in OpenMRS: '"
-			                + creds.getClientName() + "'. The user creation was attempted but has failed. ", e);
+			throw new ContextAuthenticationException(e.getMessage(), e);
 		}
 	}
 	
-	public void setDaemonToken(DaemonToken daemonToken) {
-		this.daemonToken = daemonToken;
+	private void updateUser(User user, UserInfo userInfo) {
+		Daemon.runInDaemonThread(new UpdateUserTask(userService, userInfo), daemonToken);
 	}
 }

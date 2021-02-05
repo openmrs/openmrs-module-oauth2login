@@ -32,9 +32,8 @@ public class OAuth2LoginActivator extends BaseModuleActivator implements DaemonT
 	public void started() {
 		log.info("Started " + OAuth2LoginConstants.MODULE_NAME);
 		
-		UsernameAuthenticationScheme authenticationScheme = Context.getRegisteredComponent("usernameAuthenticationScheme",
-		    UsernameAuthenticationScheme.class);
-		authenticationScheme.setDaemonToken(daemonToken);
+		Context.getRegisteredComponent("oauth2login.usernameAuthenticationScheme", UsernameAuthenticationScheme.class)
+		        .setDaemonToken(daemonToken);
 	}
 	
 	/**
