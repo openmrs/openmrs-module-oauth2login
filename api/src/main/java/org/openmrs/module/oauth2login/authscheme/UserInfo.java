@@ -83,7 +83,7 @@ public class UserInfo {
 	 * @param defaultValue The default value.
 	 * @return
 	 */
-	protected String get(String propertyKey, String defaultValue) {
+	public String get(String propertyKey, String defaultValue) {
 		String res = defaultValue;
 		
 		if (!props.containsKey(propertyKey)) {
@@ -106,7 +106,7 @@ public class UserInfo {
 	/**
 	 * @see #get(String, String)
 	 */
-	protected String get(String propertyKey) {
+	public String get(String propertyKey) {
 		return get(propertyKey, null);
 	}
 	

@@ -21,6 +21,7 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.module.oauth2login.authscheme.UserInfo;
 import org.openmrs.util.OpenmrsUtil;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -91,5 +92,16 @@ public class OAuth2BeanFactory {
 		resource.setScope(Arrays.asList(props.getProperty("scope").trim().split(",")));
 		
 		return new OAuth2RestTemplate(resource, oauth2Context);
+	}
+	
+	@Bean(name = "oauth2.postProcessor")
+	public AuthenticationPostProcessor getPostProcessor() throws IOException {
+		return new AuthenticationPostProcessor() {
+			
+			@Override
+			public void process(UserInfo userInfo) {
+				// Do nothing
+			}
+		};
 	}
 }

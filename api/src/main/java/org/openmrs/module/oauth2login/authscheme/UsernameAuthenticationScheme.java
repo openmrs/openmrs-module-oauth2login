@@ -45,7 +45,8 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		if (user == null) {
 			
 			try {
-				user = getContextDAO().createUser(creds.getUserInfo().getOpenmrsUser(), RandomStringUtils.random(100, true, true), creds.getUserInfo().getRoleNames());
+				user = getContextDAO().createUser(creds.getUserInfo().getOpenmrsUser(),
+				    RandomStringUtils.random(100, true, true), creds.getUserInfo().getRoleNames());
 			}
 			catch (Exception e) {
 				throw new ContextAuthenticationException(
