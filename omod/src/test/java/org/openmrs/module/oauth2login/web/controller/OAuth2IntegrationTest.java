@@ -9,14 +9,21 @@
  */
 package org.openmrs.module.oauth2login.web.controller;
 
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +31,8 @@ import org.mockito.Mock;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.Credentials;
+import org.openmrs.module.DaemonTokenAware;
+import org.openmrs.module.TestDaemonToken;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
@@ -82,6 +91,9 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	private Properties oauth2Props;
 	
+	@Autowired
+	private DaemonTokenAware authenticationScheme;
+	
 	@Override
 	protected Credentials getCredentials() {
 		
@@ -100,6 +112,8 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	@Before
 	public void setup() throws Exception {
 		
+		new TestDaemonToken().setDaemonToken(authenticationScheme);
+		
 		controller.setOAuth2Properties(oauth2Props);
 		
 		controller.setRestTemplate(testRestTemplate);
@@ -114,6 +128,8 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	protected abstract void assertAuthenticatedUser(User user);
 	
+	protected abstract String[] roleNamesToAssert();
+	
 	@Test
 	public void assertOAuth2Authentication() throws Exception {
 		// pre-verif
@@ -126,5 +142,10 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 		User user = Context.getAuthenticatedUser();
 		Assert.assertNotNull(user);
 		assertAuthenticatedUser(user);
+		Set<String> roleNames = user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toSet());
+
+		Set<String> expectedRoleNames = new HashSet<>(Arrays.asList(roleNamesToAssert()));
+		Assert.assertThat(roleNames, hasSize(CollectionUtils.size(roleNamesToAssert())));
+        Assert.assertThat(roleNames, containsInAnyOrder(roleNamesToAssert()));
 	}
 }
