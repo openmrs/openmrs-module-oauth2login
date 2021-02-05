@@ -11,21 +11,15 @@ public class UpdateUserTask implements Runnable {
 	
 	private UserInfo userInfo;
 	
-	private User user;
-	
 	public UpdateUserTask(UserService userService, UserInfo userInfo) {
 		this.userService = userService;
 		this.userInfo = userInfo;
 	}
 	
-	public User getUpdatedUser() {
-		return user;
-	}
-	
 	@Override
 	public void run() {
-		user = userService.getUserByUsername(userInfo.getUsername());
-		user = userService.saveUser(updated(user));
+		User user = userService.getUserByUsername(userInfo.getUsername());
+		userService.saveUser(updated(user));
 	}
 	
 	/**
