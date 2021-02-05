@@ -26,7 +26,7 @@ The properties configuration contains two separate sets of settings:
 2. OpenMRS users properties mappings with the OAuth 2 'user info'.
 <br/>For new users the master information is first maintained with the OAuth 2 provider, starting with their _username_. This information is obtained through a JSON response from the user info URI. A simple one-to-one mapping between what is needed from an OpenMRS user's perspective and what is given by the OAuth 2 provider can be provided through the OAuth 2 properties file.
 
-The module ships with test resources that show how the OAuth 2 properties file should look like when using JBoss' Keycloak and Google API as OAuth 2 providers, see [here](./omod/src/test/resources/).
+The module ships with sample test resources that show how the OAuth 2 properties file should look like when using JBoss' Keycloak and Google API as OAuth 2 providers, see [here](./omod/src/test/resources/).
 
 ## Authentication Mechanism
 #### Overview
@@ -37,28 +37,63 @@ The authentication is based on the **username**.
 <sub>\* _This duplication of users could be avoided if OpenMRS was fully leveraging Spring Security. This is not yet the case and as of now authorization is made based on users that are persisted and accessed through the DAO layer._</sub>
 
 #### On-the-fly user creation
-However at first the user might not exist yet in OpenMRS and as a convenience the module will create new OpenMRS users on the fly. This is why a mapping mechanism must exist between the OAuth 2 provider users and the OpenMRS users, in particular to find out what the OpenMRS username should be.
+However at first the user might not exist yet in OpenMRS and as a convenience the module will create a new OpenMRS user on the fly. This is why a mapping mechanism must exist between the OAuth 2 provider user infos and the OpenMRS users, at minima to find out what the OpenMRS username will be.
 
-#### Initial set of roles
-A list of OpenMRS role can be provided through the user info JSON so that they get assigned to a first time logged in user. This can be done through the `openmrs.mapping.user.roles` mapping property that holds a pointer to the user info JSON key whose value is a comma-separated list of OpenMRS role names.
+#### Keeping identities in sync with OpenMRS
+The main use case is to help support the management of users and roles **outside** of OpenMRS, with the identity provider. The `User` pieces of information that are mapped to OpenMRS user properties and that can be updated at each authentication are listed here:
 
-The user info JSON might look like that:
+* [Username](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L52) \*
+* [System ID](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L50) \*
+* [Email](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L54)
+* Given, middle and last names (managed through the underlying `Person` [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Person.java#L57))
+* Gender (same remark, [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Person.java#L63))
+* [Roles](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L56)
+    
+\* _Username and system ID cannot be updated, they are set once and for all at the first authentication of the user._
+
+##### _Almost_ externalised role management
+A list of OpenMRS roles can be provided through the user info JSON. This can be done through leveraging the `openmrs.mapping.user.roles` mapping property that holds a pointer to the user info JSON key whose value is a comma-separated list of OpenMRS role names.
+
+For instance a basic user info JSON might look like that:
 ```json
 {
   "sub": "4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc",
   "email": "jdoe@example.com",
-  "creation_roles": "Nurse, Clinical Advisor"
+  "roles": "Nurse, Clinical Advisor"
 }
 ```
 With an OAuth 2 properties mapping set as such:
 ```
-openmrs.mapping.user.roles=creation_roles
+openmrs.mapping.user.roles=roles
 ```
-Where "Nurse" and "Clinical Advisor" are expected to be OpenMRS role _names_. Those role names help fetch OpenMRS roles that are then assigned to the user. All the role names that do not point to existing OpenMRS roles are skipped.
+Where "Nurse" and "Clinical Advisor" are expected to be OpenMRS role _names_. Those role names are then used to fetch OpenMRS roles to be assigned to the user. All the role names that do not point to existing OpenMRS roles are skipped.
 
-This is a convenience to streamline the first login experience with OpenMRS, in order for new user to not be role-less. **This is not an external management of user roles for OpenMRS**.
+This requires using an identity provider that allows the configuration of the user info JSON with custom members, such as this `"roles"` member in the above example.
 
-Finally this convenience can only work when we have control over the what the user info response JSON can return.
+##### Sample mapping
+Let us start from a sample JSON to understand how the mappings should be set.
+
+###### 1) Sample  user info  JSON:
+```json
+{
+  "sub": "4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc",
+  "preferred_username": "tatkins",
+  "given_name": "Tommy",
+  "family_name": "Atkins",
+  "email": "tatkins@example.com",
+  "roles": "Provider, Nurse"
+}
+```
+
+###### 2) Corresponding mappings needed in oauth2.properties:
+```java
+openmrs.mapping.user.systemId=sub
+openmrs.mapping.user.username=preferred_username
+openmrs.mapping.person.givenName=given_name
+openmrs.mapping.person.familyName=family_name
+openmrs.mapping.user.email=email
+openmrs.mapping.user.roles=roles
+```
 
 #### Example
 If a user authenticates as 'jdoe' with the OAuth 2 provider, OpenMRS will attempt to fetch the user 'jdoe'.
@@ -71,6 +106,9 @@ For example when the module is used within the Reference Application with the tw
 ```
 /referenceapplication/login.page?redirectUrl=/index.html
 ```
+
+## Two-step login with OpenMRS 2.x
+In OpenMRS 2.x it is necessary to explicitely enable the two-step login for the OAuth2 delegated authentication to work properly. To do so make sure that the following global property exists with a non-blank value: `referenceapplication.locationUserPropertyName`.
 
 ## Configuration Guides
 

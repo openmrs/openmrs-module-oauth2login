@@ -21,14 +21,17 @@ import org.openmrs.api.context.Credentials;
 import org.openmrs.api.context.Daemon;
 import org.openmrs.api.context.DaoAuthenticationScheme;
 import org.openmrs.module.DaemonToken;
+import org.openmrs.module.DaemonTokenAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * A scheme that authenticates with OpenMRS based on the 'username'.
  */
+@Transactional
 @Component("oauth2login.usernameAuthenticationScheme")
-public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
+public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implements DaemonTokenAware {
 	
 	protected Log log = LogFactory.getLog(getClass());
 	
@@ -44,9 +47,9 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	@Override
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
 		
-		OAuth2TokenCredentials creds;
+		OAuth2TokenCredentials oauth2Credentials;
 		try {
-			creds = (OAuth2TokenCredentials) credentials;
+			oauth2Credentials = (OAuth2TokenCredentials) credentials;
 		}
 		catch (ClassCastException e) {
 			throw new ContextAuthenticationException("The credentials provided did not match those needed for the "
@@ -55,9 +58,9 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		if (user == null) {
-			createUser(creds.getUserInfo());
+			createUser(oauth2Credentials.getUserInfo());
 		} else {
-			updateUser(user, creds.getUserInfo());
+			updateUser(user, oauth2Credentials.getUserInfo());
 		}
 		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
@@ -74,6 +77,7 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	}
 	
 	private void updateUser(User user, UserInfo userInfo) {
-		Daemon.runInDaemonThread(new UpdateUserTask(userService, userInfo), daemonToken);
+		UpdateUserTask task = new UpdateUserTask(userService, userInfo);
+		Daemon.runInDaemonThread(task, daemonToken);
 	}
 }

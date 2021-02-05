@@ -15,7 +15,6 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.DaemonTokenAware;
-import org.openmrs.module.oauth2login.authscheme.UsernameAuthenticationScheme;
 
 /**
  * This class contains the logic that is run every time this module is either started or shutdown
@@ -32,8 +31,8 @@ public class OAuth2LoginActivator extends BaseModuleActivator implements DaemonT
 	public void started() {
 		log.info("Started " + OAuth2LoginConstants.MODULE_NAME);
 		
-		Context.getRegisteredComponent("oauth2login.usernameAuthenticationScheme", UsernameAuthenticationScheme.class)
-		        .setDaemonToken(daemonToken);
+		Context.getRegisteredComponent("oauth2login.usernameAuthenticationScheme", DaemonTokenAware.class).setDaemonToken(
+		    daemonToken);
 	}
 	
 	/**
