@@ -15,12 +15,10 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,11 +31,10 @@ import org.mockito.Mock;
 import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.Credentials;
-import org.openmrs.module.DaemonToken;
-import org.openmrs.module.ModuleFactory;
+import org.openmrs.module.DaemonTokenAware;
+import org.openmrs.module.TestDaemonToken;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
-import org.openmrs.module.oauth2login.authscheme.UsernameAuthenticationScheme;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.openmrs.util.OpenmrsConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,7 +92,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	private Properties oauth2Props;
 	
 	@Autowired
-	private UsernameAuthenticationScheme authScheme;
+	private DaemonTokenAware authenticationScheme;
 	
 	@Override
 	protected Credentials getCredentials() {
@@ -114,13 +111,8 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	@Before
 	public void setup() throws Exception {
-		// setting a Daemon token to the auth scheme and to ModuleFactory#daemonTokens 
-		DaemonToken token = new DaemonToken("o2l");
-		authScheme.setDaemonToken(token);
-		Field field = ModuleFactory.class.getDeclaredField("daemonTokens");
-		field.setAccessible(true);
-		((Map<String, DaemonToken>) field.get(ModuleFactory.class)).put("o2l", token);
-		field.setAccessible(false);
+		
+		new TestDaemonToken().setDaemonToken(authenticationScheme);
 		
 		controller.setOAuth2Properties(oauth2Props);
 		

@@ -37,7 +37,7 @@ public class UpdateUserTask implements Runnable {
 	private User updated(User user) {
 		
 		user.setEmail(userInfo.getOpenmrsUser().getEmail());
-		user.setRoles(userInfo.getRoleNames().stream().map(roleName -> userService.getRole(roleName)).collect(Collectors.toSet()));
+		user.setRoles(userInfo.getRoleNames().stream().map(roleName -> userService.getRole(roleName)).filter(r -> r != null).collect(Collectors.toSet()));
 		
 		user.getPerson().getPersonName().setGivenName(userInfo.getOpenmrsUser().getPersonName().getGivenName());
 		user.getPerson().getPersonName().setMiddleName(userInfo.getOpenmrsUser().getPersonName().getMiddleName());

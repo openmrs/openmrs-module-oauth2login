@@ -21,14 +21,17 @@ import org.openmrs.api.context.Credentials;
 import org.openmrs.api.context.Daemon;
 import org.openmrs.api.context.DaoAuthenticationScheme;
 import org.openmrs.module.DaemonToken;
+import org.openmrs.module.DaemonTokenAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * A scheme that authenticates with OpenMRS based on the 'username'.
  */
+@Transactional
 @Component("oauth2login.usernameAuthenticationScheme")
-public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
+public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implements DaemonTokenAware {
 	
 	protected Log log = LogFactory.getLog(getClass());
 	
@@ -44,9 +47,9 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 	@Override
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
 		
-		OAuth2TokenCredentials creds;
+		OAuth2TokenCredentials oauth2Credentials;
 		try {
-			creds = (OAuth2TokenCredentials) credentials;
+			oauth2Credentials = (OAuth2TokenCredentials) credentials;
 		}
 		catch (ClassCastException e) {
 			throw new ContextAuthenticationException("The credentials provided did not match those needed for the "
@@ -55,19 +58,17 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		if (user == null) {
-			//			user = createUser(creds.getUserInfo());
-			createUser(creds.getUserInfo());
+			createUser(oauth2Credentials.getUserInfo());
 		} else {
-			//			user = updateUser(user, creds.getUserInfo());
-			updateUser(user, creds.getUserInfo());
+			updateUser(user, oauth2Credentials.getUserInfo());
 		}
 		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
 	
-	private User createUser(UserInfo userInfo) throws ContextAuthenticationException {
+	private void createUser(UserInfo userInfo) throws ContextAuthenticationException {
 		try {
-			return getContextDAO().createUser(userInfo.getOpenmrsUser(), RandomStringUtils.random(100, true, true),
+			getContextDAO().createUser(userInfo.getOpenmrsUser(), RandomStringUtils.random(100, true, true),
 			    userInfo.getRoleNames());
 		}
 		catch (Exception e) {
@@ -75,9 +76,8 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme {
 		}
 	}
 	
-	private User updateUser(User user, UserInfo userInfo) {
+	private void updateUser(User user, UserInfo userInfo) {
 		UpdateUserTask task = new UpdateUserTask(userService, userInfo);
-		Daemon.runInDaemonThreadAndWait(task, daemonToken);
-		return task.getUpdatedUser();
+		Daemon.runInDaemonThread(task, daemonToken);
 	}
 }
