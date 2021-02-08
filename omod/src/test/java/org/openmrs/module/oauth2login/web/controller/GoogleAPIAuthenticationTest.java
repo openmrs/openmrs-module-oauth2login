@@ -24,8 +24,7 @@ public class GoogleAPIAuthenticationTest extends OAuth2IntegrationTest {
 		return "{\n" + "  \"sub\": \"31a709c3-67f4-4b01-b76c-b39e650c0a41\",\n" + "  \"name\": \"John Doe\",\n"
 		        + "  \"given_name\": \"John\",\n" + "  \"family_name\": \"Doe\",\n"
 		        + "  \"profile\": \"http://example.com/profile\",\n" + "  \"picture\": \"http://example.com/picture\",\n"
-		        + "  \"email\": \"jdoe@example.com\",\n" + "  \"email_verified\": true,\n" + "  \"locale\": \"en\",\n"
-		        + "  \"roles\": \"nurse,doctor\"\n" + "}";
+		        + "  \"email\": \"jdoe@example.com\",\n" + "  \"email_verified\": true,\n" + "  \"locale\": \"en\",\n" + "}";
 	}
 	
 	@Override
@@ -35,6 +34,11 @@ public class GoogleAPIAuthenticationTest extends OAuth2IntegrationTest {
 		Assert.assertEquals("John", user.getGivenName());
 		Assert.assertEquals("Doe", user.getFamilyName());
 		Assert.assertEquals("jdoe@example.com", user.getEmail());
+	}
+	
+	@Override
+	protected String[] roleNamesToAssert() {
+		return new String[] {};
 	}
 	
 }

@@ -11,20 +11,28 @@ package org.openmrs.module.oauth2login;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
+import org.openmrs.module.DaemonToken;
+import org.openmrs.module.DaemonTokenAware;
 
 /**
  * This class contains the logic that is run every time this module is either started or shutdown
  */
-public class OAuth2LoginActivator extends BaseModuleActivator {
+public class OAuth2LoginActivator extends BaseModuleActivator implements DaemonTokenAware {
 	
 	private final Log log = LogFactory.getLog(getClass());
+	
+	private DaemonToken daemonToken;
 	
 	/**
 	 * @see #started()
 	 */
 	public void started() {
 		log.info("Started " + OAuth2LoginConstants.MODULE_NAME);
+		
+		Context.getRegisteredComponent("oauth2login.usernameAuthenticationScheme", DaemonTokenAware.class).setDaemonToken(
+		    daemonToken);
 	}
 	
 	/**
@@ -32,5 +40,10 @@ public class OAuth2LoginActivator extends BaseModuleActivator {
 	 */
 	public void shutdown() {
 		log.info("Shut down " + OAuth2LoginConstants.MODULE_NAME);
+	}
+	
+	@Override
+	public void setDaemonToken(DaemonToken daemonToken) {
+		this.daemonToken = daemonToken;
 	}
 }
