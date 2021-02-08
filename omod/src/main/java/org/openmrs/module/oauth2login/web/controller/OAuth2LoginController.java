@@ -91,7 +91,9 @@ public class OAuth2LoginController {
 			log.info("The user '" + userInfo + "' was successfully authenticated with the identity provider.");
 		}
 		
-		postProcessor.process(userInfo);
+		if (postProcessor != null) {
+			postProcessor.process(userInfo);
+		}
 		
 		return new ModelAndView("redirect:" + getRedirectUri());
 	}
