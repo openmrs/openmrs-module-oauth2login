@@ -31,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Transactional
 @Component("oauth2login.usernameAuthenticationScheme")
-public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implements DaemonTokenAware {
+public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implements DaemonTokenAware, AuthenticationPostProcessorAware {
 	
 	protected Log log = LogFactory.getLog(getClass());
 	
