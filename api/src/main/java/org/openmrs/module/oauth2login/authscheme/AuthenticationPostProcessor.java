@@ -1,4 +1,4 @@
-package org.openmrs.module.oauth2login.web.controller;
+package org.openmrs.module.oauth2login.authscheme;
 
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
 

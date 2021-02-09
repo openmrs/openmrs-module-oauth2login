@@ -36,14 +36,30 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 	protected Log log = LogFactory.getLog(getClass());
 	
 	private DaemonToken daemonToken;
-
+	
+	private AuthenticationPostProcessor postProcessor;
+	
 	@Autowired
 	private UserService userService;
-
+	
 	public void setDaemonToken(DaemonToken daemonToken) {
 		this.daemonToken = daemonToken;
 	}
-
+	
+	public void setPostProcessor(AuthenticationPostProcessor postProcessor) {
+		this.postProcessor = postProcessor;
+	}
+	
+	public UsernameAuthenticationScheme() {
+		postProcessor = new AuthenticationPostProcessor() {
+			
+			@Override
+			public void process(UserInfo userInfo) {
+				// Do nothing
+			}
+		};
+	}
+	
 	@Override
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
 		
@@ -62,10 +78,12 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 		} else {
 			updateUser(user, oauth2Credentials.getUserInfo());
 		}
-
+		
+		postProcessor.process(oauth2Credentials.getUserInfo());
+		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
-
+	
 	private void createUser(UserInfo userInfo) throws ContextAuthenticationException {
 		try {
 			getContextDAO().createUser(userInfo.getOpenmrsUser(), RandomStringUtils.random(100, true, true),
@@ -75,7 +93,7 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 			throw new ContextAuthenticationException(e.getMessage(), e);
 		}
 	}
-
+	
 	private void updateUser(User user, UserInfo userInfo) {
 		UpdateUserTask task = new UpdateUserTask(userService, userInfo);
 		Daemon.runInDaemonThread(task, daemonToken);

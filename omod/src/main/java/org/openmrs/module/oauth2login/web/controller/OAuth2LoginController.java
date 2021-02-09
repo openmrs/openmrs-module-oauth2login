@@ -44,8 +44,6 @@ public class OAuth2LoginController {
 	
 	private RestOperations restTemplate; // to fetch user infos from OAuth2 provider
 	
-	private AuthenticationPostProcessor postProcessor;
-	
 	@Autowired
 	public void setRestTemplate(@Qualifier("oauth2.restTemplate") RestOperations restTemplate) {
 		this.restTemplate = restTemplate;
@@ -59,11 +57,6 @@ public class OAuth2LoginController {
 	@Autowired
 	public void setUserInfoUri(@Qualifier("oauth2.userInfoUri") String userInfoUri) {
 		this.userInfoUri = userInfoUri;
-	}
-	
-	@Autowired
-	public void setPostProcessor(@Qualifier("oauth2.postProcessor") AuthenticationPostProcessor postProcessor) {
-		this.postProcessor = postProcessor;
 	}
 	
 	@RequestMapping(value = "/oauth2login", method = GET)
@@ -89,10 +82,6 @@ public class OAuth2LoginController {
 		}
 		finally {
 			log.info("The user '" + userInfo + "' was successfully authenticated with the identity provider.");
-		}
-		
-		if (postProcessor != null) {
-			postProcessor.process(userInfo);
 		}
 		
 		return new ModelAndView("redirect:" + getRedirectUri());
