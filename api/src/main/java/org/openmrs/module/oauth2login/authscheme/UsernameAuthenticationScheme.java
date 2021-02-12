@@ -95,7 +95,12 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 	}
 	
 	private void updateUser(User user, UserInfo userInfo) {
-		UpdateUserTask task = new UpdateUserTask(userService, userInfo);
-		Daemon.runInDaemonThread(task, daemonToken);
+		try {
+			UpdateUserTask task = new UpdateUserTask(userService, userInfo);
+			Daemon.runInDaemonThread(task, daemonToken);
+		}
+		catch (Exception e) {
+			throw new ContextAuthenticationException(e.getMessage(), e);
+		}
 	}
 }
