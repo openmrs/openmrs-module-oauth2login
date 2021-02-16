@@ -37,11 +37,27 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 	
 	private DaemonToken daemonToken;
 	
+	private AuthenticationPostProcessor postProcessor;
+	
 	@Autowired
 	private UserService userService;
 	
 	public void setDaemonToken(DaemonToken daemonToken) {
 		this.daemonToken = daemonToken;
+	}
+	
+	public void setPostProcessor(AuthenticationPostProcessor postProcessor) {
+		this.postProcessor = postProcessor;
+	}
+	
+	public UsernameAuthenticationScheme() {
+		setPostProcessor(new AuthenticationPostProcessor() {
+			
+			@Override
+			public void process(UserInfo userInfo) {
+				// no post-processing by default
+			}
+		});
 	}
 	
 	@Override
@@ -63,6 +79,8 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 			updateUser(user, oauth2Credentials.getUserInfo());
 		}
 		
+		postProcessor.process(oauth2Credentials.getUserInfo());
+		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
 	
@@ -77,7 +95,12 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 	}
 	
 	private void updateUser(User user, UserInfo userInfo) {
-		UpdateUserTask task = new UpdateUserTask(userService, userInfo);
-		Daemon.runInDaemonThread(task, daemonToken);
+		try {
+			UpdateUserTask task = new UpdateUserTask(userService, userInfo);
+			Daemon.runInDaemonThread(task, daemonToken);
+		}
+		catch (Exception e) {
+			throw new ContextAuthenticationException(e.getMessage(), e);
+		}
 	}
 }
