@@ -51,13 +51,13 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 	}
 	
 	public UsernameAuthenticationScheme() {
-		postProcessor = new AuthenticationPostProcessor() {
+		setPostProcessor(new AuthenticationPostProcessor() {
 			
 			@Override
 			public void process(UserInfo userInfo) {
-				// Do nothing
+				// no post-processing by default
 			}
-		};
+		});
 	}
 	
 	@Override
