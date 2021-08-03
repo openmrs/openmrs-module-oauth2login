@@ -91,7 +91,7 @@ public class UserInfo {
 	 *            JSON, eg. "openmrs.mapping.user.username".
 	 * @return The user info JSON value for the specified OpenMRS property key.
 	 */
-	protected Object get(String propertyKey) throws RuntimeException {
+	public Object get(String propertyKey) throws RuntimeException {
 		if (!props.containsKey(propertyKey)) {
 			throw new IllegalArgumentException("There was an attempt to read the corresponding value for '" + propertyKey
 			        + "' in the user info JSON, this property is not mapped in the OAuth2 properties file.");
