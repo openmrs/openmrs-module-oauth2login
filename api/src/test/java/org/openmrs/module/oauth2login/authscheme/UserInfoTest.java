@@ -36,7 +36,7 @@ public class UserInfoTest {
 	}
 	
 	@Test
-	public void getRoleNames_shouldParseToEmptyRoleNamesWhenMappingIsNotDefined() throws Exception {
+	public void getRoleNames_shouldParseToEmptyRoleNamesWhenMappingIsNotDefined() {
 		// setup
 		oauth2Props = new Properties();
 		userInfo = new UserInfo(oauth2Props, "{\"roles\": [\"Nurse\", \"Doctor\"]}");
@@ -48,9 +48,8 @@ public class UserInfoTest {
 		Assert.assertThat(roleNames, empty());
 	}
 	
-	@Ignore
 	@Test
-	public void getRoleNames_shouldParseToEmptyRoleNamesWhenNoneInUserInfo() throws Exception {
+	public void getRoleNames_shouldParseToEmptyRoleNamesWhenNoneInUserInfo() {
 		// setup
 		oauth2Props.setProperty(PROP_ROLES, "roles");
 		userInfo = new UserInfo(oauth2Props, "{}");
