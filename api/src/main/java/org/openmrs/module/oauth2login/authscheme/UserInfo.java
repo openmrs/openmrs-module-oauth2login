@@ -9,12 +9,12 @@
  */
 package org.openmrs.module.oauth2login.authscheme;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.StringUtils;
 import org.openmrs.Person;
 import org.openmrs.PersonName;
 import org.openmrs.User;
@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
+
+import net.minidev.json.JSONArray;
 
 /**
  * This is an object representation of the OAuth2 user info response with convenience methods to
@@ -60,7 +62,8 @@ public class UserInfo {
 	 * values (such as 'username', 'user/person first name', 'user email', 'user/person gender' ...
 	 * etc, and the root level keys where they are found in the user info JSON.
 	 * 
-	 * @param oauth2Props A mapping file that
+	 * @param oauth2Props A mapping between OpenMRS' user or person values and the fields where they
+	 *            are to be found in the user info JSON.
 	 * @param userInfoJson The user info JSON.
 	 */
 	public UserInfo(Properties oauth2Props, String userInfoJson) {
@@ -75,39 +78,75 @@ public class UserInfo {
 	
 	/**
 	 * Fetches the value in the user info JSON based on the property key as defined in the OAuth2
-	 * properties file. If the key is not defined in the OAuth2 properties file or if the value for
-	 * that key cannot be parsed from the user info JSON file, then the fallback default value is
-	 * returned.
+	 * properties file. To do so, this methods maps a property key to a user info JSON key, before
+	 * fetching the corresponding value in the user info JSON. Eg.: "openmrs.mapping.user.username"
+	 * → "username" → "jdoe".
 	 * 
-	 * @param propertyKey The OAuth2 mapping file property key, eg. "openmrs.mapping.user.username".
-	 * @param defaultValue The default value.
-	 * @return
+	 * @throws RuntimeException as a general matter of fact, see below.
+	 * @throws IllegalArgumentException when the requested property key is not documented in the
+	 *             OAuth2 properties mapping file.
+	 * @throws PathNotFoundException when the mapped JSON key cannot be located in the user info
+	 *             JSON.
+	 * @param propertyKey The OpenMRS property whose value is to be fetched out of the user info
+	 *            JSON, eg. "openmrs.mapping.user.username".
+	 * @return The user info JSON value for the specified OpenMRS property key.
 	 */
-	public String get(String propertyKey, String defaultValue) {
-		String res = defaultValue;
-		
+	protected Object get(String propertyKey) throws RuntimeException {
 		if (!props.containsKey(propertyKey)) {
-			log.warn("There was an attempt to read the value of " + propertyKey
-			        + " out of the user info JSON, but the JSON property could not be found.");
-			return res;
+			throw new IllegalArgumentException("There was an attempt to read the corresponding value for '" + propertyKey
+			        + "' in the user info JSON, this property is not mapped in the OAuth2 properties file.");
 		}
 		
 		String jsonKey = props.getProperty(propertyKey);
 		try {
-			res = JsonPath.read(json, "$." + jsonKey);
+			return JsonPath.read(json, "$." + jsonKey);
 		}
 		catch (PathNotFoundException e) {
-			log.error("There was an error when reading the the JSON path $." + jsonKey + " in the user info JSON.", e);
+			throw new PathNotFoundException("There was an error when reading the JSON path $." + jsonKey + " mapped from '"
+			        + propertyKey + "' in the user info JSON.", e);
+		}
+		
+	}
+	
+	/**
+	 * Fetches the value in the user info JSON as a String based on the property key as defined in
+	 * the OAuth2 properties file. If the key is not defined in the OAuth2 properties file or if the
+	 * value for that key cannot be parsed from the user info JSON file, then the fallback default
+	 * value is returned.
+	 * 
+	 * @param propertyKey The OpenMRS property whose value is to be fetched out of the user info
+	 *            JSON, eg. "openmrs.mapping.user.username".
+	 * @param defaultValue The default value.
+	 * @return The String user info JSON value for the specified OpenMRS property key.
+	 */
+	public String getString(String propertyKey, String defaultValue) {
+		String res = defaultValue;
+		
+		Object val = null;
+		try {
+			val = get(propertyKey);
+		}
+		catch (RuntimeException e) {
+			log.warn(e.getMessage(), e);
+			return res;
+		}
+		
+		try {
+			res = (String) val;
+		}
+		catch (ClassCastException e) {
+			throw new IllegalArgumentException("The user info JSON value corresponding to the key '" + propertyKey
+			        + "' cannot be resolved to a simple string value, perhaps is it a structured object?", e);
 		}
 		
 		return res;
 	}
 	
 	/**
-	 * @see #get(String, String)
+	 * @see #getString(String, String)
 	 */
-	public String get(String propertyKey) {
-		return get(propertyKey, null);
+	public String getString(String propertyKey) {
+		return getString(propertyKey, null);
 	}
 	
 	/**
@@ -117,7 +156,7 @@ public class UserInfo {
 	 * @return The OpenMRS username.
 	 */
 	public String getUsername() {
-		return get(PROP_USERNAME);
+		return getString(PROP_USERNAME);
 	}
 	
 	/**
@@ -130,15 +169,15 @@ public class UserInfo {
 		
 		User user = new User();
 		user.setUsername(getUsername());
-		user.setSystemId(get(PROP_SYSTEMID));
-		user.setEmail(get(PROP_EMAIL, ""));
+		user.setSystemId(getString(PROP_SYSTEMID));
+		user.setEmail(getString(PROP_EMAIL, ""));
 		
 		Person person = new Person();
-		person.setGender(get(PROP_GENDER, "n/a"));
+		person.setGender(getString(PROP_GENDER, "n/a"));
 		PersonName name = new PersonName();
-		name.setGivenName(get(PROP_GIVEN_NAME));
-		name.setMiddleName(get(PROP_MIDDLE_NAME, ""));
-		name.setFamilyName(get(PROP_FAMILY_NAME));
+		name.setGivenName(getString(PROP_GIVEN_NAME));
+		name.setMiddleName(getString(PROP_MIDDLE_NAME, ""));
+		name.setFamilyName(getString(PROP_FAMILY_NAME));
 		
 		user.setPerson(person);
 		user.addName(name);
@@ -150,13 +189,22 @@ public class UserInfo {
 	 * Convenience method that retrieves the list of role names from the OAuth2 user info JSON based
 	 * on the mappings defined in the OAuth2 properties file.
 	 * 
-	 * @return The list of role names, eg. ["Nurse", "Anaesthesia Assistant"].
+	 * @return The list of role <i>names</i>, eg. ["Nurse", "Anaesthesia Assistant"].
 	 */
 	public List<String> getRoleNames() {
-		String roleNames = get(PROP_ROLES, "");
-		return Stream.of(roleNames.split(","))
-				.filter(n -> StringUtils.isNoneBlank(n))
-				.map(n -> StringUtils.trim(n))
+		Object val = null;
+		try {
+			val = get(PROP_ROLES);
+		}
+		catch (RuntimeException e) {
+			log.error(e.getMessage(), e);
+			return Collections.emptyList();
+		}
+		
+		JSONArray jsonArray = (JSONArray) val;
+		return IntStream.range(0, jsonArray.size())
+				.mapToObj(i -> (String) jsonArray.get(i))
 				.collect(Collectors.toList());
+
 	}
 }

@@ -9,6 +9,8 @@
  */
 package org.openmrs.module.oauth2login;
 
+import static org.openmrs.module.oauth2login.OAuth2LoginConstants.AUTH_SCHEME_COMPONENT;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.api.context.Context;
@@ -31,8 +33,7 @@ public class OAuth2LoginActivator extends BaseModuleActivator implements DaemonT
 	public void started() {
 		log.info("Started " + OAuth2LoginConstants.MODULE_NAME);
 		
-		Context.getRegisteredComponent("oauth2login.usernameAuthenticationScheme", DaemonTokenAware.class).setDaemonToken(
-		    daemonToken);
+		Context.getRegisteredComponent(AUTH_SCHEME_COMPONENT, DaemonTokenAware.class).setDaemonToken(daemonToken);
 	}
 	
 	/**

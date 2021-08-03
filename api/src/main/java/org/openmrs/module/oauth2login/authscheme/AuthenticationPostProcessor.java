@@ -6,7 +6,7 @@ import org.openmrs.api.context.ContextAuthenticationException;
  * Implementations of this interface can be set to UsernameAuthenticationScheme as a way to hook a
  * OAuth2 user info post processing routine.
  * 
- * @see UsernameAuthenticationScheme#setPostProcessor
+ * @see OAuth2UserInfoAuthenticationScheme#setPostProcessor
  */
 public interface AuthenticationPostProcessor {
 	
