@@ -18,4 +18,9 @@ public class OAuth2LoginConstants {
 	
 	public static final String MODULE_ARTIFACT_ID = "oauth2login";
 	
+	/*
+	 * Spring components
+	 */
+	public static final String AUTH_SCHEME_COMPONENT = "oauth2login.userInfoAuthenticationScheme";
+	
 }

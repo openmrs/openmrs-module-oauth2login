@@ -9,6 +9,8 @@
  */
 package org.openmrs.module.oauth2login.authscheme;
 
+import static org.openmrs.module.oauth2login.OAuth2LoginConstants.AUTH_SCHEME_COMPONENT;
+
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,8 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
  * A scheme that authenticates with OpenMRS based on the 'username'.
  */
 @Transactional
-@Component("oauth2login.usernameAuthenticationScheme")
-public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implements DaemonTokenAware {
+@Component(AUTH_SCHEME_COMPONENT)
+public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme implements DaemonTokenAware {
 	
 	protected Log log = LogFactory.getLog(getClass());
 	
@@ -50,7 +52,7 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 		this.postProcessor = postProcessor;
 	}
 	
-	public UsernameAuthenticationScheme() {
+	public OAuth2UserInfoAuthenticationScheme() {
 		setPostProcessor(new AuthenticationPostProcessor() {
 			
 			@Override
@@ -63,9 +65,9 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 	@Override
 	public Authenticated authenticate(Credentials credentials) throws ContextAuthenticationException {
 		
-		OAuth2TokenCredentials oauth2Credentials;
+		OAuth2TokenCredentials creds;
 		try {
-			oauth2Credentials = (OAuth2TokenCredentials) credentials;
+			creds = (OAuth2TokenCredentials) credentials;
 		}
 		catch (ClassCastException e) {
 			throw new ContextAuthenticationException("The credentials provided did not match those needed for the "
@@ -74,12 +76,12 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		if (user == null) {
-			createUser(oauth2Credentials.getUserInfo());
+			createUser(creds.getUserInfo());
 		} else {
-			updateUser(user, oauth2Credentials.getUserInfo());
+			updateUser(user, creds.getUserInfo());
 		}
 		
-		postProcessor.process(oauth2Credentials.getUserInfo());
+		postProcessor.process(creds.getUserInfo());
 		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}

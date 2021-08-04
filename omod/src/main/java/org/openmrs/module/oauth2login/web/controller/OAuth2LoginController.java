@@ -77,8 +77,8 @@ public class OAuth2LoginController {
 			Context.authenticate(new OAuth2TokenCredentials(userInfo));
 		}
 		catch (ContextAuthenticationException e) {
-			throw new RuntimeException("The user '" + userInfo + "' could not be authenticated with the identity provider.",
-			        e);
+			log.warn("The user '" + userInfo + "' could not be authenticated with the identity provider.");
+			throw e;
 		}
 		finally {
 			log.info("The user '" + userInfo + "' was successfully authenticated with the identity provider.");

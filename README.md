@@ -51,7 +51,7 @@ The main use case is to help support the management of users and roles **outside
     
 \* _Username and system ID cannot be updated, they are set once and for all at the first authentication of the user._
 
-##### _Almost_ externalised role management
+##### Externalised role management
 A list of OpenMRS roles can be provided through the user info JSON. This can be done through leveraging the `openmrs.mapping.user.roles` mapping property that holds a pointer to the user info JSON key whose value is a comma-separated list of OpenMRS role names.
 
 For instance a basic user info JSON might look like that:
@@ -59,7 +59,7 @@ For instance a basic user info JSON might look like that:
 {
   "sub": "4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc",
   "email": "jdoe@example.com",
-  "roles": "Nurse, Clinical Advisor"
+  "roles": ["Nurse", "Clinical Advisor"]
 }
 ```
 With an OAuth 2 properties mapping set as such:
@@ -81,7 +81,10 @@ Let us start from a sample JSON to understand how the mappings should be set.
   "given_name": "Tommy",
   "family_name": "Atkins",
   "email": "tatkins@example.com",
-  "roles": "Provider, Nurse"
+  "roles": [
+    "Provider",
+    "Nurse"
+  ]
 }
 ```
 
@@ -97,8 +100,8 @@ openmrs.mapping.user.roles=roles
 
 #### Example
 If a user authenticates as 'jdoe' with the OAuth 2 provider, OpenMRS will attempt to fetch the user 'jdoe'.
-* If a 'jdoe' user can be found in OpenMRS, then it will become the authenticated user.
-* If a 'jdoe' user cannot be found in OpenMRS, it will be created with a initial set of roles and will become the authenticated user.
+* If a 'jdoe' user can be found in OpenMRS, then it will updated as per the user info JSON and become the authenticated user.
+* If a 'jdoe' user cannot be found in OpenMRS, it will be created as per the user info JSON and become the authenticated user.
 
 ## Redirect URL after successful login
 By default the user will be redirected to the root URL `/` after a successul login. The redirect URL can be modified by using the global property (GP) `oauth2login.redirectUriAfterLogin`.

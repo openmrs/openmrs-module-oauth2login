@@ -21,10 +21,10 @@ public class UserInfoTest {
 	private Properties oauth2Props = new Properties();
 	
 	@Test
-	public void getRoleNames_shouldParseAndTrimRoleNamesWhenMappingIsDefined() {
+	public void getRoleNames_shouldParseAndTrimRoleNamesWhenMappingIsDefined() throws Exception {
 		// setup
 		oauth2Props.setProperty(PROP_ROLES, "roles");
-		userInfo = new UserInfo(oauth2Props, "{\"roles\":\"Nurse, Doctor\"}");
+		userInfo = new UserInfo(oauth2Props, "{\"roles\": [\"Nurse\", \"Doctor\"]}");
 		
 		// replay
 		List<String> roleNames = userInfo.getRoleNames();
@@ -38,7 +38,7 @@ public class UserInfoTest {
 	public void getRoleNames_shouldParseToEmptyRoleNamesWhenMappingIsNotDefined() {
 		// setup
 		oauth2Props = new Properties();
-		userInfo = new UserInfo(oauth2Props, "{\"roles\":\"Nurse, Doctor\"}");
+		userInfo = new UserInfo(oauth2Props, "{\"roles\": [\"Nurse\", \"Doctor\"]}");
 		
 		// replay
 		List<String> roleNames = userInfo.getRoleNames();
