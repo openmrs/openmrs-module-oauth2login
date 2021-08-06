@@ -43,6 +43,16 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwtVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwtVersion}</version>
+        </dependency>
 		<!--required as we use GP to determine the redirect URI-->
 		<dependency>
 			<groupId>org.openmrs.module</groupId>

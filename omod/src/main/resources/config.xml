@@ -21,10 +21,18 @@
 			<param-value>/oauth2login,/oauth2logout</param-value>
 		</init-param>
 	</filter>
+    <filter>
+        <filter-name>oauth2ServiceAccountFilter</filter-name>
+        <filter-class>org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter</filter-class>
+    </filter>
 
 	<filter-mapping>
 		<filter-name>oauth2-request-filter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+    <filter-mapping>
+        <filter-name>oauth2ServiceAccountFilter</filter-name>
+        <url-pattern>/ws/rest/*</url-pattern>
+    </filter-mapping>
 
 </module>

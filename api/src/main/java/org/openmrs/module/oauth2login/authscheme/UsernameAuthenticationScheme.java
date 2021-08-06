@@ -73,13 +73,15 @@ public class UsernameAuthenticationScheme extends DaoAuthenticationScheme implem
 		}
 		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
-		if (user == null) {
-			createUser(oauth2Credentials.getUserInfo());
-		} else {
-			updateUser(user, oauth2Credentials.getUserInfo());
+		if (!oauth2Credentials.isServiceAccount()) {
+			if (user == null) {
+				createUser(oauth2Credentials.getUserInfo());
+			} else {
+				updateUser(user, oauth2Credentials.getUserInfo());
+			}
+			
+			postProcessor.process(oauth2Credentials.getUserInfo());
 		}
-		
-		postProcessor.process(oauth2Credentials.getUserInfo());
 		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
