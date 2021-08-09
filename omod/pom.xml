@@ -53,6 +53,17 @@
             <artifactId>jjwt-impl</artifactId>
             <version>${jjwtVersion}</version>
         </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwtVersion}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 		<!--required as we use GP to determine the redirect URI-->
 		<dependency>
 			<groupId>org.openmrs.module</groupId>
