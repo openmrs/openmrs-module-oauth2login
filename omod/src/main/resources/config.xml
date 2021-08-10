@@ -12,6 +12,10 @@
 
 	<require_version>${openmrsPlatformVersion}</require_version>
 
+    <filter>
+        <filter-name>oauth2ServiceAccountFilter</filter-name>
+        <filter-class>org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter</filter-class>
+    </filter>
 	<filter>
 		<filter-name>oauth2-request-filter</filter-name>
 		<filter-class>org.openmrs.module.oauth2login.web.filter.OAuth2LoginRequestFilter</filter-class>
@@ -22,6 +26,10 @@
 		</init-param>
 	</filter>
 
+    <filter-mapping>
+        <filter-name>oauth2ServiceAccountFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<filter-mapping>
 		<filter-name>oauth2-request-filter</filter-name>
 		<url-pattern>/*</url-pattern>
