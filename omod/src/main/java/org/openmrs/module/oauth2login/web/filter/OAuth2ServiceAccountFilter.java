@@ -37,8 +37,6 @@ public class OAuth2ServiceAccountFilter implements Filter {
 	
 	protected final Logger log = LoggerFactory.getLogger(OAuth2ServiceAccountFilter.class);
 	
-	public static final String GP_KEY = "oauth2login.jws.verification.key";
-	
 	public static final String HEADER_BEARER = "Bearer";
 	
 	public static final String HEADER_X_JWT_ASSERT = "X-JWT-Assertion";
@@ -78,9 +76,8 @@ public class OAuth2ServiceAccountFilter implements Filter {
 					String[] parts = token.split("\\.");
 					//Ignore if this is not a JWT token
 					if (parts.length == 3) {
-						String publicKey = Context.getAdministrationService().getGlobalProperty(GP_KEY);
 						try {
-							Claims claims = JwtTokenUtils.parseAndVerifyToken(token, publicKey.trim());
+							Claims claims = JwtTokenUtils.parseAndVerifyToken(token);
 							Properties props = Context.getRegisteredComponent("oauth2.properties", Properties.class);
 							String username = claims.get(props.getProperty(UserInfo.PROP_USERNAME), String.class);
 							String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
