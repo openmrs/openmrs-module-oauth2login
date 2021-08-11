@@ -24,9 +24,9 @@ import io.jsonwebtoken.Jwts;
 /**
  * Utility class for parsing and verifying JWT tokens
  */
-public class JwtTokenUtils {
+public class JwtUtils {
 	
-	protected static final Logger log = LoggerFactory.getLogger(JwtTokenUtils.class);
+	protected static final Logger log = LoggerFactory.getLogger(JwtUtils.class);
 	
 	public static final String OAUTH_PROP_KEY = "publicKey";
 	

@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
-import org.openmrs.module.oauth2login.web.JwtTokenUtils;
+import org.openmrs.module.oauth2login.web.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +77,7 @@ public class OAuth2ServiceAccountFilter implements Filter {
 					//Ignore if this is not a JWT token
 					if (parts.length == 3) {
 						try {
-							Claims claims = JwtTokenUtils.parseAndVerifyToken(token);
+							Claims claims = JwtUtils.parseAndVerifyToken(token);
 							Properties props = Context.getRegisteredComponent("oauth2.properties", Properties.class);
 							String username = claims.get(props.getProperty(UserInfo.PROP_USERNAME), String.class);
 							String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
