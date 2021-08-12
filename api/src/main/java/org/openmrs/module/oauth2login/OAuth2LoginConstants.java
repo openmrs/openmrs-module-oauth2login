@@ -23,4 +23,6 @@ public class OAuth2LoginConstants {
 	 */
 	public static final String AUTH_SCHEME_COMPONENT = "oauth2login.userInfoAuthenticationScheme";
 	
+	public static final String OAUTH_PROP_BEAN_NAME = "oauth2.properties";
+	
 }

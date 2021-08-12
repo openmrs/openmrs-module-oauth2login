@@ -1,10 +1,8 @@
 package org.openmrs.module.oauth2login.web;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.openmrs.util.OpenmrsUtil.getApplicationDataDirectory;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
@@ -14,7 +12,6 @@ import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.APIException;
-import org.openmrs.api.context.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +19,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
 /**
- * Utility class for parsing and verifying JWT tokens
+ * Provides utility methods for parsing and verifying JWT tokens
  */
 public class JwtUtils {
 	
@@ -34,12 +31,20 @@ public class JwtUtils {
 	
 	public static String publicKeyTxt = null;
 	
-	public static Claims parseAndVerifyToken(String jwtToken) throws Exception {
+	/**
+	 * Parses and verifies a JWT token
+	 * 
+	 * @param jwtToken the JWT token
+	 * @param oauthProps oauth2 properties instance
+	 * @return Claims object
+	 * @throws Exception
+	 */
+	public static Claims parseAndVerifyToken(String jwtToken, Properties oauthProps) throws Exception {
 		if (publicKeyTxt == null) {
-			publicKeyTxt = getPublicKey();
+			publicKeyTxt = getPublicKey(oauthProps);
 		}
 		
-		if (StringUtils.isNotBlank(publicKeyTxt)) {
+		if (StringUtils.isBlank(publicKeyTxt)) {
 			throw new APIException("Unable to find public key to verify JWT tokens");
 		}
 		
@@ -51,21 +56,30 @@ public class JwtUtils {
 		
 	}
 	
-	public synchronized static String getPublicKey() throws Exception {
-		Properties props = Context.getRegisteredComponent("oauth2.properties", Properties.class);
-		if (StringUtils.isNotBlank(props.getProperty(OAUTH_PROP_KEY))) {
+	/**
+	 * Looks up the public key based on the specified oauthProps properties. Lookup order is the oauth
+	 * property, and then the configured file containing the key.
+	 * 
+	 * @param oauthProps Properties instance
+	 * @return the public key
+	 * @throws Exception
+	 */
+	public synchronized static String getPublicKey(Properties oauthProps) throws Exception {
+		if (StringUtils.isNotBlank(oauthProps.getProperty(OAUTH_PROP_KEY))) {
 			log.info("Using public key specified via the oauth property named: " + OAUTH_PROP_KEY);
-			return props.getProperty(OAUTH_PROP_KEY).trim();
+			
+			return oauthProps.getProperty(OAUTH_PROP_KEY).trim();
 		}
 		
-		if (StringUtils.isNotBlank(props.getProperty(OAUTH_PROP_KEY_FILE))) {
-			Path path = Paths.get(getApplicationDataDirectory(), props.getProperty(OAUTH_PROP_KEY_FILE).trim());
-			if (path.toFile().exists()) {
-				log.info("Using public key from the file: " + path.toFile());
-				return FileUtils.readFileToString(path.toFile(), UTF_8).trim();
+		if (StringUtils.isNotBlank(oauthProps.getProperty(OAUTH_PROP_KEY_FILE))) {
+			File file = Utils.getFileInAppDataDirectory(oauthProps.getProperty(OAUTH_PROP_KEY_FILE).trim());
+			if (file.exists()) {
+				log.info("Using public key from the file: " + file);
+				
+				return FileUtils.readFileToString(file, UTF_8).trim();
 			}
 			
-			log.error("The oauth public key file doesn't exist -> " + path.toAbsolutePath());
+			log.error("The oauth public key file doesn't exist -> " + file.getAbsolutePath());
 		}
 		
 		//TODO Add support to look up public key from IDP

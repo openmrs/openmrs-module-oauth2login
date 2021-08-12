@@ -9,6 +9,8 @@
  */
 package org.openmrs.module.oauth2login.web.filter;
 
+import static org.openmrs.module.oauth2login.OAuth2LoginConstants.OAUTH_PROP_BEAN_NAME;
+
 import java.io.IOException;
 import java.util.Properties;
 
@@ -77,8 +79,8 @@ public class OAuth2ServiceAccountFilter implements Filter {
 					//Ignore if this is not a JWT token
 					if (parts.length == 3) {
 						try {
-							Claims claims = JwtUtils.parseAndVerifyToken(token);
-							Properties props = Context.getRegisteredComponent("oauth2.properties", Properties.class);
+							Properties props = Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class);
+							Claims claims = JwtUtils.parseAndVerifyToken(token, props);
 							String username = claims.get(props.getProperty(UserInfo.PROP_USERNAME), String.class);
 							String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
 							Context.authenticate(new OAuth2TokenCredentials(new UserInfo(props, userInfoJson), true));
