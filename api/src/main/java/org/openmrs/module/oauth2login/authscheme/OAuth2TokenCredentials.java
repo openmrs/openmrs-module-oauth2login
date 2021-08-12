@@ -33,8 +33,8 @@ public class OAuth2TokenCredentials implements Credentials {
 	}
 	
 	/**
-	 * Builds the credentials from the user info while specifies if the credentials are for a service
-	 * account or not
+	 * Builds the credentials from the user info while specifies if the credentials are for a
+	 * service account or not
 	 * 
 	 * @param userInfo The OAuth2 user info as an {@link UserInfo} instance.
 	 * @param serviceAccount true if the credentials are for a service account otherwise false

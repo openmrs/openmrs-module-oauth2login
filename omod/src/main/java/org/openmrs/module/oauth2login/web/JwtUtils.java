@@ -57,8 +57,8 @@ public class JwtUtils {
 	}
 	
 	/**
-	 * Looks up the public key based on the specified oauthProps properties. Lookup order is the oauth
-	 * property, and then the configured file containing the key.
+	 * Looks up the public key based on the specified oauthProps properties. Lookup order is the
+	 * oauth property, and then the configured file containing the key.
 	 * 
 	 * @param oauthProps Properties instance
 	 * @return the public key

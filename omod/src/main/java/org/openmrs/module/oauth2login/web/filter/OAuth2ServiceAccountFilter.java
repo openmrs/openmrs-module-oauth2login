@@ -37,7 +37,7 @@ import io.jsonwebtoken.Claims;
  */
 public class OAuth2ServiceAccountFilter implements Filter {
 	
-	protected final Logger log = LoggerFactory.getLogger(OAuth2ServiceAccountFilter.class);
+	private static final Logger log = LoggerFactory.getLogger(OAuth2ServiceAccountFilter.class);
 	
 	public static final String HEADER_BEARER = "Bearer";
 	
@@ -60,21 +60,25 @@ public class OAuth2ServiceAccountFilter implements Filter {
 	}
 	
 	/**
-	 * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest, javax.servlet.ServletResponse,
-	 *      javax.servlet.FilterChain)
+	 * @see javax.servlet.Filter#doFilter(javax.servlet.ServletRequest,
+	 *      javax.servlet.ServletResponse, javax.servlet.FilterChain)
 	 */
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-	    throws IOException, ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
+	        ServletException {
 		
 		if (request instanceof HttpServletRequest) {
 			//TODO should we limit this authentication mechanism to webservice calls only?
 			HttpServletRequest httpRequest = (HttpServletRequest) request;
 			String headerValue = httpRequest.getHeader("Authorization");
 			if (StringUtils.isNotBlank(headerValue)) {
+				if (log.isDebugEnabled()) {
+					log.debug("Found Authorization header on request");
+				}
+				
 				if (headerValue.startsWith(HEADER_BEARER) || headerValue.startsWith(HEADER_X_JWT_ASSERT)) {
-					String schema = headerValue.startsWith(HEADER_BEARER) ? HEADER_BEARER : HEADER_X_JWT_ASSERT;
-					String token = headerValue.substring(schema.length() + 1);
+					String scheme = headerValue.startsWith(HEADER_BEARER) ? HEADER_BEARER : HEADER_X_JWT_ASSERT;
+					String token = headerValue.substring(scheme.length() + 1);
 					String[] parts = token.split("\\.");
 					//Ignore if this is not a JWT token
 					if (parts.length == 3) {
@@ -89,6 +93,14 @@ public class OAuth2ServiceAccountFilter implements Filter {
 							//Ignore and let the API take care of authentication issues
 							log.warn("Failed to authenticate user using oauth token", e);
 						}
+					} else {
+						if (log.isDebugEnabled()) {
+							log.debug("Ignoring non JWT token");
+						}
+					}
+				} else {
+					if (log.isDebugEnabled()) {
+						log.debug("Found unsupported authentication scheme in authorization header value");
 					}
 				}
 			}
