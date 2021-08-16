@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Contain http utility methods methods
+ * Contains http utility methods
  */
 public class HttpUtils {
 	

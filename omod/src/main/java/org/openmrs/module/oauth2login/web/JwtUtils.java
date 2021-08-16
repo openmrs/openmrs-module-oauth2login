@@ -45,7 +45,6 @@ public class JwtUtils {
 	
 	public static JsonWebKeySet remoteJsonWebKeySet = null;
 	
-	//TODO Support other algorithms other than RSA depending on the alg value in the token header
 	public static final String[] SUPPORTED_ALGORITHMS = new String[] { AlgorithmIdentifiers.RSA_USING_SHA256,
 	        AlgorithmIdentifiers.RSA_USING_SHA384, AlgorithmIdentifiers.RSA_USING_SHA512,
 	        AlgorithmIdentifiers.RSA_PSS_USING_SHA256, AlgorithmIdentifiers.RSA_PSS_USING_SHA384,
@@ -69,7 +68,7 @@ public class JwtUtils {
 	}
 	
 	/**
-	 * Sets up the public key based on the specified oauthProps properties. Lookup order is the oauth
+	 * Gets the public key based on the specified oauthProps properties. Lookup order is the oauth
 	 * property, and then the configured file containing the key.
 	 * 
 	 * @param jwt the JWT token that will verified with the public key
@@ -137,9 +136,9 @@ public class JwtUtils {
 	}
 	
 	/**
-	 * Parses a string to and creates a PublicKey object
+	 * Parses a base64 encoded string and creates a PublicKey object
 	 * 
-	 * @param publicKeyTxt base64 encoded public key String
+	 * @param publicKeyTxt public key String
 	 * @return PublicKey object
 	 * @throws Exception
 	 */
