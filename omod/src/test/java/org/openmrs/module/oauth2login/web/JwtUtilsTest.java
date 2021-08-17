@@ -167,8 +167,7 @@ public class JwtUtilsTest {
 		Whitebox.setInternalState(JwtUtils.class, "keysInitialized", true);
 		Whitebox.setInternalState(JwtUtils.class, PublicKey.class, Keys.keyPairFor(RS256).getPublic());
 		ee.expect(SignatureException.class);
-		ee.expectMessage(
-		    "JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.");
+		ee.expectMessage("JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.");
 		JwtUtils.parseAndVerifyToken(jwtToken, null);
 	}
 	
