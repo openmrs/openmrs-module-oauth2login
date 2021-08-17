@@ -113,6 +113,37 @@ For example when the module is used within the Reference Application with the tw
 ## Two-step login with OpenMRS 2.x
 In OpenMRS 2.x it is necessary to explicitely enable the two-step login for the OAuth2 delegated authentication to work properly. To do so make sure that the following global property exists with a non-blank value: `referenceapplication.locationUserPropertyName`.
 
+## Service Account Authentication
+Not all interaction with OpenMRS is by human users, some is server-to-server interaction, third party systems need to 
+authenticate with OpenMRS in order to access desired resources, these applications should be able to provide a token 
+obtained from an identity provider that can be trusted by OpenMRS to authenticate and authorize them to access restricted 
+resources, service account authentication is aimed at addressing this requirement.
+
+#### How it Works
+The third party system obtains a [JWT](jwt.io) token from and identity provider and then for any subsequent requests, it
+sets it as the value of the authorization header with the scheme set to **Bearer** or **X-JWT-Assertion** as shown below,
+
+```Authorization: Bearer YOUR-JWT-TOKEN```
+
+OR
+
+```Authorization: X-JWT-Assertion YOUR-JWT-TOKEN```
+
+When OpenMRS receives the request, it reads the JWT from the header, parses and verifies its signature, if all is good, 
+it goes ahead to read the username from the JWT payload and uses it to authenticate the request using this module's 
+Oauth2 authentication scheme, this assumes a user account already exists in OpenMRS with the specified username.
+
+#### Configuration
+In order for OpenMRS to verify the signature of a JWT, it needs a key to do so. For enhanced security, the module only 
+supports asymmetric algorithms. Currently, only RSA based algorithms(RS256, RS384, RS512, PS256, PS384, PS512) are 
+supported. Therefore, you need to provide a public key from the identity provider to be used to verify the JWT 
+signatures. The public key can be configured in 3 ways and below is the lookup order,
+1. From the **oauth2.properties** file as the value of the **publicKey** property
+2. From a specific file located in the application data directory or its subdirectories, this file is configured via the
+   **oauth2.properties** file as the value of the **publicKeyFilename** property
+3. The module fetches all known keys from the identity provider at the url configured as the value of the **keysUrl** 
+   property in the **oauth2.properties** file
+
 ## Configuration Guides
 
 1. [Guide for Keycloak](readme/Keycloak.md)
@@ -120,3 +151,4 @@ In OpenMRS 2.x it is necessary to explicitely enable the two-step login for the 
 
 ## Requirements
 OpenMRS Core 2.2.1 or Core 2.3.0 and above.
+
