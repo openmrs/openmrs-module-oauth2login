@@ -1,6 +1,5 @@
 package org.openmrs.module.oauth2login.web;
 
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +42,7 @@ public class HttpUtils {
 				throw new APIException("Unexpected response " + error + " from identity provider");
 			}
 			
-			return IOUtils.toString((InputStream) connection.getContent(), StandardCharsets.UTF_8);
+			return IOUtils.toString(connection.getInputStream(), StandardCharsets.UTF_8);
 		}
 		finally {
 			if (connection != null) {
