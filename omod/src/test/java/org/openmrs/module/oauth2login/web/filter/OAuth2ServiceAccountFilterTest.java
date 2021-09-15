@@ -2,11 +2,11 @@ package org.openmrs.module.oauth2login.web.filter;
 
 import static org.apache.commons.lang3.reflect.ConstructorUtils.getAccessibleConstructor;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.openmrs.module.oauth2login.OAuth2LoginConstants.OAUTH_PROP_BEAN_NAME;
-import static org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter.HEADER_BEARER;
-import static org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter.HEADER_X_JWT_ASSERT;
+import static org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter.HEADER_NAME_AUTH;
+import static org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter.HEADER_NAME_X_JWT_ASSERT;
+import static org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter.SCHEME_BEARER;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
@@ -37,8 +37,6 @@ import io.jsonwebtoken.Claims;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Context.class, JwtUtils.class, OAuth2ServiceAccountFilter.class })
 public class OAuth2ServiceAccountFilterTest {
-	
-	private static final String AUTH_HEADER = "Authorization";
 	
 	@Mock
 	private Properties mockProps;
@@ -78,9 +76,9 @@ public class OAuth2ServiceAccountFilterTest {
 	}
 	
 	@Test
-	public void doFilter_shouldAuthenticateTheRequestWithAValidBearerJwtTokenHeader() throws Exception {
+	public void doFilter_shouldAuthenticateTheRequestWithATokenSpecifiedWithAuthHeaderAndBearerScheme() throws Exception {
 		final String jwtToken = "header.payload.signature";
-		when(mockRequest.getHeader(AUTH_HEADER)).thenReturn(HEADER_BEARER + " " + jwtToken);
+		when(mockRequest.getHeader(HEADER_NAME_AUTH)).thenReturn(SCHEME_BEARER + " " + jwtToken);
 		when(Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class)).thenReturn(mockProps);
 		when(JwtUtils.parseAndVerifyToken(jwtToken, mockProps)).thenReturn(mockClaims);
 		final String propName = "testProperty";
@@ -100,9 +98,9 @@ public class OAuth2ServiceAccountFilterTest {
 	}
 	
 	@Test
-	public void doFilter_shouldAuthenticateTheRequestWithAValidXJwtAssertJwtTokenHeader() throws Exception {
+	public void doFilter_shouldAuthenticateTheRequestWithATokenSpecifiedWithXJwtAssertHeader() throws Exception {
 		final String jwtToken = "header.payload.signature";
-		when(mockRequest.getHeader(AUTH_HEADER)).thenReturn(HEADER_X_JWT_ASSERT + " " + jwtToken);
+		when(mockRequest.getHeader(HEADER_NAME_X_JWT_ASSERT)).thenReturn(jwtToken);
 		when(Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class)).thenReturn(mockProps);
 		when(JwtUtils.parseAndVerifyToken(jwtToken, mockProps)).thenReturn(mockClaims);
 		final String propName = "testProperty";
@@ -119,21 +117,11 @@ public class OAuth2ServiceAccountFilterTest {
 		
 		verifyStatic();
 		Context.authenticate(mockCredentials);
-	}
-	
-	@Test
-	public void doFilter_shouldIgnoreTheRequestWithAHeaderOfUnknownScheme() throws Exception {
-		when(mockRequest.getHeader(AUTH_HEADER)).thenReturn("Digest header.payload.signature");
-		when(mockLogger.isDebugEnabled()).thenReturn(true);
-		
-		filter.doFilter(mockRequest, null, mockFilterChain);
-		
-		verify(mockLogger).debug("Found unsupported authentication scheme in authorization header value");
 	}
 	
 	@Test
 	public void doFilter_shouldIgnoreTheRequestWithATokenThatIsNotAJwt() throws Exception {
-		when(mockRequest.getHeader(AUTH_HEADER)).thenReturn(HEADER_BEARER + " header.payload");
+		when(mockRequest.getHeader(HEADER_NAME_AUTH)).thenReturn(SCHEME_BEARER + " header.payload");
 		when(mockLogger.isDebugEnabled()).thenReturn(true);
 		
 		filter.doFilter(mockRequest, null, mockFilterChain);
@@ -144,7 +132,7 @@ public class OAuth2ServiceAccountFilterTest {
 	@Test
 	public void doFilter_shouldNotAuthenticateTheRequestWithAnInValidJwtToken() throws Exception {
 		final String jwtToken = "header.payload.signature";
-		when(mockRequest.getHeader(AUTH_HEADER)).thenReturn(HEADER_BEARER + " " + jwtToken);
+		when(mockRequest.getHeader(HEADER_NAME_AUTH)).thenReturn(SCHEME_BEARER + " " + jwtToken);
 		when(Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class)).thenReturn(mockProps);
 		Exception e = new Exception();
 		when(JwtUtils.parseAndVerifyToken(jwtToken, mockProps)).thenThrow(e);
@@ -160,7 +148,7 @@ public class OAuth2ServiceAccountFilterTest {
 		
 		filter.doFilter(mockRequest, null, mockFilterChain);
 		
-		verifyZeroInteractions(mockLogger);
+		verify(mockLogger).debug("No oauth token specified via supported header names");
 	}
 	
 }

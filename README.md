@@ -121,13 +121,13 @@ resources, service account authentication is aimed at addressing this requiremen
 
 #### How it Works
 The third party system obtains a [JWT](jwt.io) token from and identity provider and then for any subsequent requests, it
-sets it as the value of the authorization header with the scheme set to **Bearer** or **X-JWT-Assertion** as shown below,
+sets it as the value of the authorization header with the scheme set to **Bearer** or a special header named **X-JWT-Assertion** as shown below,
 
 ```Authorization: Bearer YOUR-JWT-TOKEN```
 
 OR
 
-```Authorization: X-JWT-Assertion YOUR-JWT-TOKEN```
+```X-JWT-Assertion: YOUR-JWT-TOKEN```
 
 When OpenMRS receives the request, it reads the JWT from the header, parses and verifies its signature, if all is good, 
 it goes ahead to read the username from the JWT payload and uses it to authenticate the request using this module's 

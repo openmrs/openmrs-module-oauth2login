@@ -39,9 +39,11 @@ public class OAuth2ServiceAccountFilter implements Filter {
 	
 	private static final Logger log = LoggerFactory.getLogger(OAuth2ServiceAccountFilter.class);
 	
-	public static final String HEADER_BEARER = "Bearer";
+	public static final String HEADER_NAME_AUTH = "Authorization";
 	
-	public static final String HEADER_X_JWT_ASSERT = "X-JWT-Assertion";
+	public static final String HEADER_NAME_X_JWT_ASSERT = "X-JWT-Assertion";
+	
+	public static final String SCHEME_BEARER = "Bearer";
 	
 	/**
 	 * @see javax.servlet.Filter#init(javax.servlet.FilterConfig)
@@ -70,38 +72,41 @@ public class OAuth2ServiceAccountFilter implements Filter {
 		if (request instanceof HttpServletRequest) {
 			//TODO should we limit this authentication mechanism to webservice calls only?
 			HttpServletRequest httpRequest = (HttpServletRequest) request;
-			String headerValue = httpRequest.getHeader("Authorization");
+			String headerValue = httpRequest.getHeader(HEADER_NAME_AUTH);
+			String token;
 			if (StringUtils.isNotBlank(headerValue)) {
+				token = headerValue.substring(SCHEME_BEARER.length() + 1);
+			} else {
+				token = httpRequest.getHeader(HEADER_NAME_X_JWT_ASSERT);
+			}
+			
+			if (StringUtils.isNotBlank(token)) {
 				if (log.isDebugEnabled()) {
 					log.debug("Found Authorization header on request");
 				}
 				
-				if (headerValue.startsWith(HEADER_BEARER) || headerValue.startsWith(HEADER_X_JWT_ASSERT)) {
-					String scheme = headerValue.startsWith(HEADER_BEARER) ? HEADER_BEARER : HEADER_X_JWT_ASSERT;
-					String token = headerValue.substring(scheme.length() + 1);
-					String[] parts = token.split("\\.");
-					//Ignore if this is not a JWT token
-					if (parts.length == 3) {
-						try {
-							Properties props = Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class);
-							Claims claims = JwtUtils.parseAndVerifyToken(token, props);
-							String username = claims.get(props.getProperty(UserInfo.PROP_USERNAME), String.class);
-							String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
-							Context.authenticate(new OAuth2TokenCredentials(new UserInfo(props, userInfoJson), true));
-						}
-						catch (Throwable e) {
-							//Ignore and let the API take care of authentication issues
-							log.warn("Failed to authenticate user using oauth token", e);
-						}
-					} else {
-						if (log.isDebugEnabled()) {
-							log.debug("Ignoring non JWT token");
-						}
+				String[] parts = token.split("\\.");
+				//Ignore if this is not a JWT token
+				if (parts.length == 3) {
+					try {
+						Properties props = Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class);
+						Claims claims = JwtUtils.parseAndVerifyToken(token, props);
+						String username = claims.get(props.getProperty(UserInfo.PROP_USERNAME), String.class);
+						String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
+						Context.authenticate(new OAuth2TokenCredentials(new UserInfo(props, userInfoJson), true));
+					}
+					catch (Throwable e) {
+						//Ignore and let the API take care of authentication issues
+						log.warn("Failed to authenticate user using oauth token", e);
 					}
 				} else {
 					if (log.isDebugEnabled()) {
-						log.debug("Found unsupported authentication scheme in authorization header value");
+						log.debug("Ignoring non JWT token");
 					}
+				}
+			} else {
+				if (log.isDebugEnabled()) {
+					log.debug("No oauth token specified via supported header names");
 				}
 			}
 		}
