@@ -120,7 +120,7 @@ obtained from an identity provider that can be trusted by OpenMRS to authenticat
 resources, service account authentication is aimed at addressing this requirement.
 
 #### How it Works
-The third party system obtains a [JWT](jwt.io) token from and identity provider and then for any subsequent requests, it
+The third party system obtains a [JWT](jwt.io) token from an identity provider and then for any subsequent requests, it
 sets it as the value of the authorization header with the scheme set to **Bearer** or a special header named **X-JWT-Assertion** as shown below,
 
 ```Authorization: Bearer YOUR-JWT-TOKEN```
