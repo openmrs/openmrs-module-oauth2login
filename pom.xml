@@ -34,8 +34,8 @@
 		<javax.servlet-apiVersion>3.0.1</javax.servlet-apiVersion>
 		<spring-security-oauth2Version>2.3.5.RELEASE</spring-security-oauth2Version>
 		<json-pathVersion>2.4.0</json-pathVersion>
-        <jjwtVersion>0.11.2</jjwtVersion>
-        <jose4jVersion>0.7.8</jose4jVersion>
+		<jjwtVersion>0.11.2</jjwtVersion>
+		<jose4jVersion>0.7.8</jose4jVersion>
 	</properties>
 
 	<modules>
