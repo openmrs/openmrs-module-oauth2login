@@ -77,6 +77,7 @@ public class JwtUtilsTest {
 		final String key = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("publicKey.txt"), "UTF-8");
 		PublicKey expectedKey = JwtUtils.stringToPublicKey(key.trim());
 		when(mockProps.getProperty(OAUTH_PROP_KEY)).thenReturn(key);
+		
 		assertEquals(expectedKey, JwtUtils.getPublicKey(null, mockProps));
 	}
 	
@@ -89,12 +90,14 @@ public class JwtUtilsTest {
 		when(mockKeyFile.exists()).thenReturn(true);
 		when(FileUtils.readFileToString(mockKeyFile, StandardCharsets.UTF_8)).thenReturn(key);
 		PublicKey expectedKey = JwtUtils.stringToPublicKey(key.trim());
+		
 		assertEquals(expectedKey, JwtUtils.getPublicKey(null, mockProps));
 	}
 	
 	@Test
 	public void getPublicKey_shouldNotLookUpTheKeyFromTheIdentityProviderIfNoUrlIsSet() throws Exception {
 		Assert.assertNull(JwtUtils.getPublicKey(null, mockProps));
+		
 		PowerMockito.verifyStatic(never());
 		HttpUtils.getJsonWebKeys(anyString());
 	}
@@ -108,6 +111,7 @@ public class JwtUtilsTest {
 		when(HttpUtils.getJsonWebKeys(url)).thenReturn(keysJson);
 		Key expectedKey = jsonWebKeySet.getJsonWebKeys().get(0).getKey();
 		final String key = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("jwtToken.txt"), "UTF-8");
+		
 		assertEquals(expectedKey, JwtUtils.getPublicKey(key, mockProps));
 	}
 	
@@ -116,6 +120,7 @@ public class JwtUtilsTest {
 		Whitebox.setInternalState(JwtUtils.class, "keysInitialized", true);
 		ee.expect(APIException.class);
 		ee.expectMessage(Matchers.equalTo("Unable to find public key to verify JWT token signatures"));
+		
 		JwtUtils.parseAndVerifyToken("someToken", mockProps);
 	}
 	
@@ -133,7 +138,9 @@ public class JwtUtilsTest {
 		Whitebox.setInternalState(JwtUtils.class, "keysInitialized", true);
 		Whitebox.setInternalState(JwtUtils.class, PublicKey.class, keyPair.getPublic());
 		Whitebox.setInternalState(JwtUtils.class, "keysInitialized", true);
+		
 		Claims actual = JwtUtils.parseAndVerifyToken(jwtToken, null);
+		
 		assertEquals(expected.size(), actual.size());
 		assertEquals(expected.getSubject(), actual.getSubject());
 		assertEquals(expected.getIssuedAt(), actual.getIssuedAt());
@@ -155,6 +162,7 @@ public class JwtUtilsTest {
 		Whitebox.setInternalState(JwtUtils.class, "keysInitialized", true);
 		ee.expect(ExpiredJwtException.class);
 		ee.expectMessage("JWT expired at " + DateFormats.formatIso8601(expiryDate, false));
+		
 		JwtUtils.parseAndVerifyToken(jwtToken, null);
 	}
 	
@@ -167,7 +175,9 @@ public class JwtUtilsTest {
 		Whitebox.setInternalState(JwtUtils.class, "keysInitialized", true);
 		Whitebox.setInternalState(JwtUtils.class, PublicKey.class, Keys.keyPairFor(RS256).getPublic());
 		ee.expect(SignatureException.class);
-		ee.expectMessage("JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.");
+		ee.expectMessage(
+		    "JWT signature does not match locally computed signature. JWT validity cannot be asserted and should not be trusted.");
+		
 		JwtUtils.parseAndVerifyToken(jwtToken, null);
 	}
 	
@@ -188,6 +198,7 @@ public class JwtUtilsTest {
 		Whitebox.setInternalState(JwtUtils.class, "keysInitialized", true);
 		ee.expect(PrematureJwtException.class);
 		ee.expectMessage("JWT must not be accepted before " + DateFormats.formatIso8601(notBeforeDate, false));
+		
 		JwtUtils.parseAndVerifyToken(jwtToken, null);
 	}
 	
