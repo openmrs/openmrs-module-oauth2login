@@ -21,6 +21,8 @@ public class OAuth2TokenCredentials implements Credentials {
 	
 	private UserInfo userInfo;
 	
+	private boolean serviceAccount = false;
+	
 	/**
 	 * Builds the credentials from the user info.
 	 * 
@@ -28,6 +30,18 @@ public class OAuth2TokenCredentials implements Credentials {
 	 */
 	public OAuth2TokenCredentials(UserInfo userInfo) {
 		this.userInfo = userInfo;
+	}
+	
+	/**
+	 * Builds the credentials from the user info while specifies if the credentials are for a
+	 * service account or not
+	 * 
+	 * @param userInfo The OAuth2 user info as an {@link UserInfo} instance.
+	 * @param serviceAccount true if the credentials are for a service account otherwise false
+	 */
+	public OAuth2TokenCredentials(UserInfo userInfo, boolean serviceAccount) {
+		this.userInfo = userInfo;
+		this.serviceAccount = serviceAccount;
 	}
 	
 	public UserInfo getUserInfo() {
@@ -43,4 +57,9 @@ public class OAuth2TokenCredentials implements Credentials {
 	public String getClientName() {
 		return userInfo.getUsername();
 	}
+	
+	public boolean isServiceAccount() {
+		return serviceAccount;
+	}
+	
 }
