@@ -92,20 +92,17 @@ public class UserInfo {
 	 * @return The user info JSON value for the specified OpenMRS property key.
 	 */
 	public Object get(String propertyKey) throws RuntimeException {
-		if (!props.containsKey(propertyKey)) {
-			throw new IllegalArgumentException("There was an attempt to read the corresponding value for '" + propertyKey
-			        + "' in the user info JSON, this property is not mapped in the OAuth2 properties file.");
+		if (props.containsKey(propertyKey)) {
+			String jsonKey = props.getProperty(propertyKey);
+			try {
+				return JsonPath.read(json, "$." + jsonKey);
+			}
+			catch (PathNotFoundException e) {
+				throw new PathNotFoundException("There was an error when reading the JSON path $." + jsonKey
+				        + " mapped from '" + propertyKey + "' in the user info JSON.", e);
+			}
 		}
-		
-		String jsonKey = props.getProperty(propertyKey);
-		try {
-			return JsonPath.read(json, "$." + jsonKey);
-		}
-		catch (PathNotFoundException e) {
-			throw new PathNotFoundException("There was an error when reading the JSON path $." + jsonKey + " mapped from '"
-			        + propertyKey + "' in the user info JSON.", e);
-		}
-		
+		return null;
 	}
 	
 	/**
@@ -128,6 +125,9 @@ public class UserInfo {
 		}
 		catch (RuntimeException e) {
 			log.warn(e.getMessage(), e);
+			return res;
+		}
+		if (val == null) {
 			return res;
 		}
 		
@@ -200,7 +200,10 @@ public class UserInfo {
 			log.error(e.getMessage(), e);
 			return Collections.emptyList();
 		}
-		
+		if ( val == null) {
+			return Collections.emptyList();
+		}
+
 		JSONArray jsonArray = (JSONArray) val;
 		return IntStream.range(0, jsonArray.size())
 				.mapToObj(i -> (String) jsonArray.get(i))
