@@ -160,23 +160,36 @@ public class UserInfo {
 	}
 	
 	/**
-	 * Convenience method to get a minimum viable OpenMRS {@link User} from the OAuth2 user info
-	 * JSON based on the mappings defined in the OAuth2 properties file.
+	 * Convenience method to get an OpenMRS {@link User} from the OAuth2 user info JSON based on the
+	 * mappings defined in the OAuth2 properties file. This method will not attempt to set any
+	 * default values when mappings are not defined in the OAuth2 properties file.
 	 * 
 	 * @return A minimum viable OpenMRS {@link User}.
 	 */
 	public User getOpenmrsUser() {
+		return getOpenmrsUser(null);
+	}
+	
+	/**
+	 * Convenience method to get an OpenMRS {@link User} from the OAuth2 user info JSON based on the
+	 * mappings defined in the OAuth2 properties file.
+	 * 
+	 * @param defaultGender The default gender to apply if it is not mapped in the OAuth2 properties
+	 *            file.
+	 * @return A minimum viable OpenMRS {@link User}.
+	 */
+	public User getOpenmrsUser(String defaultGender) {
 		
 		User user = new User();
 		user.setUsername(getUsername());
 		user.setSystemId(getString(PROP_SYSTEMID));
-		user.setEmail(getString(PROP_EMAIL, ""));
+		user.setEmail(getString(PROP_EMAIL));
 		
 		Person person = new Person();
-		person.setGender(getString(PROP_GENDER, "n/a"));
+		person.setGender(getString(PROP_GENDER, defaultGender));
 		PersonName name = new PersonName();
 		name.setGivenName(getString(PROP_GIVEN_NAME));
-		name.setMiddleName(getString(PROP_MIDDLE_NAME, ""));
+		name.setMiddleName(getString(PROP_MIDDLE_NAME));
 		name.setFamilyName(getString(PROP_FAMILY_NAME));
 		
 		user.setPerson(person);
@@ -195,15 +208,15 @@ public class UserInfo {
 		Object val = null;
 		try {
 			val = get(PROP_ROLES);
+			if (val == null) {
+				return null;
+			}
 		}
 		catch (RuntimeException e) {
 			log.error(e.getMessage(), e);
 			return Collections.emptyList();
 		}
-		if ( val == null) {
-			return Collections.emptyList();
-		}
-
+		
 		JSONArray jsonArray = (JSONArray) val;
 		return IntStream.range(0, jsonArray.size())
 				.mapToObj(i -> (String) jsonArray.get(i))

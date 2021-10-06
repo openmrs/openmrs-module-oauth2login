@@ -1,12 +1,17 @@
 package org.openmrs.module.oauth2login.authscheme;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UpdateUserTask implements Runnable {
+	
+	private final static Logger log = LoggerFactory.getLogger(UpdateUserTask.class);
 	
 	private UserService userService;
 	
@@ -24,6 +29,22 @@ public class UpdateUserTask implements Runnable {
 	}
 	
 	/**
+	 * A bean utils bean to copy over non-null values from a bean to another.
+	 * 
+	 * @see https://stackoverflow.com/a/3521314/321797
+	 */
+	private class NullAwareBeanUtilsBean extends BeanUtilsBean {
+		
+		@Override
+		public void copyProperty(Object dest, String name, Object value) throws IllegalAccessException,
+		        InvocationTargetException {
+			if (value != null) {
+				super.copyProperty(dest, name, value);
+			}
+		}
+	}
+	
+	/**
 	 * Returns the updated user as per the user info.
 	 * 
 	 * @param user The user to update
@@ -31,23 +52,15 @@ public class UpdateUserTask implements Runnable {
 	 */
 	private User updated(User user) {
 		
-		user.setEmail(userInfo.getOpenmrsUser().getEmail());
-
-		if (userInfo.getRoleNames().size() > 0) {
+		try {
+			new NullAwareBeanUtilsBean().copyProperties(user, userInfo.getOpenmrsUser());
+		}
+		catch (IllegalAccessException | InvocationTargetException e) {
+			log.error("Something went wrong when copying attributes from the user info to the OpenMRS user, the OpenMRS might not have been updated properly.", e);
+		}
+		
+		if (userInfo.getRoleNames() != null) {
 			user.setRoles(userInfo.getRoleNames().stream().map(roleName -> userService.getRole(roleName)).filter(r -> r != null).collect(Collectors.toSet()));
-		}
-
-		if (StringUtils.isNotEmpty(userInfo.getOpenmrsUser().getPersonName().getGivenName())) {
-			user.getPerson().getPersonName().setGivenName(userInfo.getOpenmrsUser().getPersonName().getGivenName());
-		}
-		if (StringUtils.isNotEmpty(userInfo.getOpenmrsUser().getPersonName().getMiddleName())) {
-			user.getPerson().getPersonName().setMiddleName(userInfo.getOpenmrsUser().getPersonName().getMiddleName());
-		}
-		if (StringUtils.isNotEmpty(userInfo.getOpenmrsUser().getPersonName().getFamilyName())) {
-			user.getPerson().getPersonName().setFamilyName(userInfo.getOpenmrsUser().getPersonName().getFamilyName());
-		}
-		if (!StringUtils.equals(userInfo.getOpenmrsUser().getPerson().getGender(), "n/a")) {
-			user.getPerson().setGender(userInfo.getOpenmrsUser().getPerson().getGender());
 		}
 
 		return user;
