@@ -43,6 +43,25 @@ public class UpdateUserTask implements Runnable {
 			return ClassUtils.isPrimitiveOrWrapper(obj.getClass()) || obj instanceof String;
 		}
 		
+		private void copyCollection(Collection<?> dest, Collection<?> value) throws IllegalAccessException,
+		        InvocationTargetException {
+			if (dest.size() > 1 || value.size() > 1) {
+				// TODO: log an appropriate error, or even throw
+				return;
+			}
+			
+			Object d = dest.stream().findFirst().orElse(null);
+			Object v = value.stream().findFirst().orElse(null);
+			
+			if (v == null) {
+				dest.clear();
+			} else if (isPrimitiveType(v) || d == null) {
+				dest = value;
+			} else {
+				new NullAwareBeanUtilsBean().copyProperties(d, v);
+			}
+		}
+		
 		@Override
 		public void copyProperty(Object dest, String name, Object value) throws IllegalAccessException,
 		        InvocationTargetException {
@@ -51,9 +70,16 @@ public class UpdateUserTask implements Runnable {
 			}
 			
 			Object destPropertyValue = new BeanWrapperImpl(dest).getPropertyValue(name);
-			if (isPrimitiveType(value) || destPropertyValue == null || destPropertyValue.getClass().isArray()
-			        || Collection.class.isAssignableFrom(destPropertyValue.getClass())) {
+			if (value.equals(destPropertyValue)) {
+				return;
+			}
+			
+			if (isPrimitiveType(value) || destPropertyValue == null) {
 				super.copyProperty(dest, name, value);
+			} else if (Collection.class.isAssignableFrom(destPropertyValue.getClass())) {
+				copyCollection((Collection<?>) destPropertyValue, (Collection<?>) value);
+			} else if (destPropertyValue.getClass().isArray()) {
+				// TODO: handle arrays
 			} else {
 				new NullAwareBeanUtilsBean().copyProperties(destPropertyValue, value);
 			}
