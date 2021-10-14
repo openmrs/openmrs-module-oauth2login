@@ -1,6 +1,7 @@
 package org.openmrs.module.oauth2login.authscheme;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
@@ -8,6 +9,8 @@ import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.util.ClassUtils;
 
 public class UpdateUserTask implements Runnable {
 	
@@ -29,17 +32,30 @@ public class UpdateUserTask implements Runnable {
 	}
 	
 	/**
-	 * A bean utils bean to copy over non-null values from a bean to another.
+	 * A bean utils bean to copy over non-null values from a bean to another. Nested non-primitive
+	 * types are handled recursively.
 	 * 
 	 * @see https://stackoverflow.com/a/3521314/321797
 	 */
-	private class NullAwareBeanUtilsBean extends BeanUtilsBean {
+	static class NullAwareBeanUtilsBean extends BeanUtilsBean {
+		
+		private boolean isPrimitiveType(Object obj) {
+			return ClassUtils.isPrimitiveOrWrapper(obj.getClass()) || obj instanceof String;
+		}
 		
 		@Override
 		public void copyProperty(Object dest, String name, Object value) throws IllegalAccessException,
 		        InvocationTargetException {
-			if (value != null) {
+			if (value == null) {
+				return;
+			}
+			
+			Object destPropertyValue = new BeanWrapperImpl(dest).getPropertyValue(name);
+			if (isPrimitiveType(value) || destPropertyValue == null || destPropertyValue.getClass().isArray()
+			        || Collection.class.isAssignableFrom(destPropertyValue.getClass())) {
 				super.copyProperty(dest, name, value);
+			} else {
+				new NullAwareBeanUtilsBean().copyProperties(destPropertyValue, value);
 			}
 		}
 	}
@@ -62,7 +78,7 @@ public class UpdateUserTask implements Runnable {
 		if (userInfo.getRoleNames() != null) {
 			user.setRoles(userInfo.getRoleNames().stream().map(roleName -> userService.getRole(roleName)).filter(r -> r != null).collect(Collectors.toSet()));
 		}
-
+		
 		return user;
 	}
 }
