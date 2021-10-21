@@ -92,20 +92,17 @@ public class UserInfo {
 	 * @return The user info JSON value for the specified OpenMRS property key.
 	 */
 	public Object get(String propertyKey) throws RuntimeException {
-		if (!props.containsKey(propertyKey)) {
-			throw new IllegalArgumentException("There was an attempt to read the corresponding value for '" + propertyKey
-			        + "' in the user info JSON, this property is not mapped in the OAuth2 properties file.");
+		if (props.containsKey(propertyKey)) {
+			String jsonKey = props.getProperty(propertyKey);
+			try {
+				return JsonPath.read(json, "$." + jsonKey);
+			}
+			catch (PathNotFoundException e) {
+				throw new PathNotFoundException("There was an error when reading the JSON path $." + jsonKey
+				        + " mapped from '" + propertyKey + "' in the user info JSON.", e);
+			}
 		}
-		
-		String jsonKey = props.getProperty(propertyKey);
-		try {
-			return JsonPath.read(json, "$." + jsonKey);
-		}
-		catch (PathNotFoundException e) {
-			throw new PathNotFoundException("There was an error when reading the JSON path $." + jsonKey + " mapped from '"
-			        + propertyKey + "' in the user info JSON.", e);
-		}
-		
+		return null;
 	}
 	
 	/**
@@ -128,6 +125,9 @@ public class UserInfo {
 		}
 		catch (RuntimeException e) {
 			log.warn(e.getMessage(), e);
+			return res;
+		}
+		if (val == null) {
 			return res;
 		}
 		
@@ -160,23 +160,36 @@ public class UserInfo {
 	}
 	
 	/**
-	 * Convenience method to get a minimum viable OpenMRS {@link User} from the OAuth2 user info
-	 * JSON based on the mappings defined in the OAuth2 properties file.
+	 * Convenience method to get an OpenMRS {@link User} from the OAuth2 user info JSON based on the
+	 * mappings defined in the OAuth2 properties file. This method will not attempt to set any
+	 * default values when mappings are not defined in the OAuth2 properties file.
 	 * 
 	 * @return A minimum viable OpenMRS {@link User}.
 	 */
 	public User getOpenmrsUser() {
+		return getOpenmrsUser(null);
+	}
+	
+	/**
+	 * Convenience method to get an OpenMRS {@link User} from the OAuth2 user info JSON based on the
+	 * mappings defined in the OAuth2 properties file.
+	 * 
+	 * @param defaultGender The default gender to apply if it is not mapped in the OAuth2 properties
+	 *            file.
+	 * @return A minimum viable OpenMRS {@link User}.
+	 */
+	public User getOpenmrsUser(String defaultGender) {
 		
 		User user = new User();
 		user.setUsername(getUsername());
 		user.setSystemId(getString(PROP_SYSTEMID));
-		user.setEmail(getString(PROP_EMAIL, ""));
+		user.setEmail(getString(PROP_EMAIL));
 		
 		Person person = new Person();
-		person.setGender(getString(PROP_GENDER, "n/a"));
+		person.setGender(getString(PROP_GENDER, defaultGender));
 		PersonName name = new PersonName();
 		name.setGivenName(getString(PROP_GIVEN_NAME));
-		name.setMiddleName(getString(PROP_MIDDLE_NAME, ""));
+		name.setMiddleName(getString(PROP_MIDDLE_NAME));
 		name.setFamilyName(getString(PROP_FAMILY_NAME));
 		
 		user.setPerson(person);
@@ -195,6 +208,9 @@ public class UserInfo {
 		Object val = null;
 		try {
 			val = get(PROP_ROLES);
+			if (val == null) {
+				return null;
+			}
 		}
 		catch (RuntimeException e) {
 			log.error(e.getMessage(), e);
