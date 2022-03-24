@@ -23,6 +23,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jose4j.json.JsonUtil;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
@@ -91,8 +92,7 @@ public class OAuth2ServiceAccountFilter implements Filter {
 					try {
 						Properties props = Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class);
 						Claims claims = JwtUtils.parseAndVerifyToken(token, props);
-						String username = claims.get(props.getProperty(UserInfo.PROP_USERNAME), String.class);
-						String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
+						String userInfoJson = JsonUtil.toJson(claims);
 						Context.authenticate(new OAuth2TokenCredentials(new UserInfo(props, userInfoJson), true));
 					}
 					catch (Throwable e) {
