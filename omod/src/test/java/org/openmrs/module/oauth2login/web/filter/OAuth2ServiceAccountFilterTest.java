@@ -11,11 +11,13 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import java.util.Collections;
 import java.util.Properties;
 
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 
+import org.jose4j.json.JsonUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +35,7 @@ import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.impl.DefaultClaims;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Context.class, JwtUtils.class, OAuth2ServiceAccountFilter.class })
@@ -43,9 +46,6 @@ public class OAuth2ServiceAccountFilterTest {
 	
 	@Mock
 	private HttpServletRequest mockRequest;
-	
-	@Mock
-	private Claims mockClaims;
 	
 	@Mock
 	private FilterChain mockFilterChain;
@@ -80,14 +80,13 @@ public class OAuth2ServiceAccountFilterTest {
 		final String jwtToken = "header.payload.signature";
 		when(mockRequest.getHeader(HEADER_NAME_AUTH)).thenReturn(SCHEME_BEARER + " " + jwtToken);
 		when(Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class)).thenReturn(mockProps);
-		when(JwtUtils.parseAndVerifyToken(jwtToken, mockProps)).thenReturn(mockClaims);
 		final String propName = "testProperty";
 		final String username = "testUsername";
+		Claims testClaims = new DefaultClaims(Collections.singletonMap(propName, username));
+		when(JwtUtils.parseAndVerifyToken(jwtToken, mockProps)).thenReturn(testClaims);
 		when(mockProps.getProperty(UserInfo.PROP_USERNAME)).thenReturn(propName);
-		when(mockClaims.get(propName, String.class)).thenReturn(username);
-		String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
 		whenNew(getAccessibleConstructor(UserInfo.class, Properties.class, String.class)).withArguments(mockProps,
-		    userInfoJson).thenReturn(mockUserInfo);
+		    JsonUtil.toJson(testClaims)).thenReturn(mockUserInfo);
 		whenNew(getAccessibleConstructor(OAuth2TokenCredentials.class, UserInfo.class, boolean.class)).withArguments(
 		    mockUserInfo, true).thenReturn(mockCredentials);
 		
@@ -102,14 +101,13 @@ public class OAuth2ServiceAccountFilterTest {
 		final String jwtToken = "header.payload.signature";
 		when(mockRequest.getHeader(HEADER_NAME_X_JWT_ASSERT)).thenReturn(jwtToken);
 		when(Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class)).thenReturn(mockProps);
-		when(JwtUtils.parseAndVerifyToken(jwtToken, mockProps)).thenReturn(mockClaims);
 		final String propName = "testProperty";
 		final String username = "testUsername";
+		Claims testClaims = new DefaultClaims(Collections.singletonMap(propName, username));
+		when(JwtUtils.parseAndVerifyToken(jwtToken, mockProps)).thenReturn(testClaims);
 		when(mockProps.getProperty(UserInfo.PROP_USERNAME)).thenReturn(propName);
-		when(mockClaims.get(propName, String.class)).thenReturn(username);
-		String userInfoJson = "{\"preferred_username\":\"" + username + "\"}";
 		whenNew(getAccessibleConstructor(UserInfo.class, Properties.class, String.class)).withArguments(mockProps,
-		    userInfoJson).thenReturn(mockUserInfo);
+		    JsonUtil.toJson(testClaims)).thenReturn(mockUserInfo);
 		whenNew(getAccessibleConstructor(OAuth2TokenCredentials.class, UserInfo.class, boolean.class)).withArguments(
 		    mockUserInfo, true).thenReturn(mockCredentials);
 		
