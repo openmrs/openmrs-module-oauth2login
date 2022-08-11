@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
-import org.openmrs.module.oauth2login.OAuth2LoginConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapperImpl;
