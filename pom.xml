@@ -10,7 +10,7 @@
 
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>oauth2login</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<packaging>pom</packaging>
 	<name>OAuth 2.0 Login</name>
 	<description>Delegates user authentication to an OAuth 2.0 authentication provider.</description>
@@ -24,7 +24,7 @@
 		<connection>scm:git:git@github.com:openmrs/openmrs-module-oauth2login.git</connection>
 		<developerConnection>scm:git:git@github.com:openmrs/openmrs-module-oauth2login.git</developerConnection>
 		<url>https://github.com/openmrs/openmrs-module-oauth2login/</url>
-		<tag>HEAD</tag>
+		<tag>1.0.0</tag>
 	</scm>
 
 	<properties>
