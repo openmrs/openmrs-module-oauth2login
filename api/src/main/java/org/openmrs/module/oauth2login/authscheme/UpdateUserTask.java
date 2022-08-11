@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
+import org.openmrs.module.oauth2login.OAuth2LoginConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapperImpl;
@@ -68,6 +69,10 @@ public class UpdateUserTask implements Runnable {
 			if (value == null) {
 				return;
 			}
+			//we don't want to update uuids
+			if("uuid".equals(name)){
+				return;
+			}
 			
 			Object destPropertyValue = new BeanWrapperImpl(dest).getPropertyValue(name);
 			if (value.equals(destPropertyValue)) {
@@ -93,9 +98,9 @@ public class UpdateUserTask implements Runnable {
 	 * @return The updated user.
 	 */
 	private User updated(User user) {
-		
 		try {
-			new NullAwareBeanUtilsBean().copyProperties(user, userInfo.getOpenmrsUser());
+			User openmrsUser = userInfo.getOpenmrsUser();
+			new NullAwareBeanUtilsBean().copyProperties(user, openmrsUser);
 		}
 		catch (IllegalAccessException | InvocationTargetException e) {
 			log.error("Something went wrong when copying attributes from the user info to the OpenMRS user, the OpenMRS user might not have been updated properly.", e);
@@ -104,7 +109,6 @@ public class UpdateUserTask implements Runnable {
 		if (userInfo.getRoleNames() != null) {
 			user.setRoles(userInfo.getRoleNames().stream().map(roleName -> userService.getRole(roleName)).filter(r -> r != null).collect(Collectors.toSet()));
 		}
-		
 		return user;
 	}
 }
