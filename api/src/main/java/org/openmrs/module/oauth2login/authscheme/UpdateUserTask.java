@@ -96,8 +96,19 @@ public class UpdateUserTask implements Runnable {
 		
 		try {
 			User openmrsUser = userInfo.getOpenmrsUser();
-			// the user's UUID MUST remain constant
-			openmrsUser.setUuid(user.getUuid());
+			// UUIDs should be stable
+			if (user.getUuid() != null) {
+				openmrsUser.setUuid(user.getUuid());
+			}
+			
+			if (user.getPerson() != null && user.getPerson().getUuid() != null) {
+				openmrsUser.getPerson().setUuid(user.getPerson().getUuid());
+			}
+			
+			if (user.getPerson() != null && user.getPerson().getPersonName() != null && user.getPerson().getPersonName().getUuid() != null) {
+				openmrsUser.getPerson().getPersonName().setUuid(user.getPerson().getPersonName().getUuid());
+			}
+			
 			new NullAwareBeanUtilsBean().copyProperties(user, openmrsUser);
 		}
 		catch (IllegalAccessException | InvocationTargetException e) {
