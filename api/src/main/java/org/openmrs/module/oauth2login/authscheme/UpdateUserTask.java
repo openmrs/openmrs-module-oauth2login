@@ -95,7 +95,10 @@ public class UpdateUserTask implements Runnable {
 	private User updated(User user) {
 		
 		try {
-			new NullAwareBeanUtilsBean().copyProperties(user, userInfo.getOpenmrsUser());
+			User openmrsUser = userInfo.getOpenmrsUser();
+			// the user's UUID MUST remain constant
+			openmrsUser.setUuid(user.getUuid());
+			new NullAwareBeanUtilsBean().copyProperties(user, openmrsUser);
 		}
 		catch (IllegalAccessException | InvocationTargetException e) {
 			log.error("Something went wrong when copying attributes from the user info to the OpenMRS user, the OpenMRS user might not have been updated properly.", e);
