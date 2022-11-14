@@ -109,9 +109,9 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			user = getContextDAO().createUser(userInfo.getOpenmrsUser("n/a"), RandomStringUtils.random(100, true, true),
 			    userInfo.getRoleNames());
 			if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
-				associateProviderAccountForUser(user);
+				activateProviderAccountForUser(user);
 			} else {
-				disAssociateProviderAccountForUser(user);
+				deativateProviderAccountForUser(user);
 			}
 		}
 		catch (Exception e) {
@@ -124,7 +124,9 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			UpdateUserTask task = new UpdateUserTask(userService, userInfo);
 			Daemon.runInDaemonThread(task, daemonToken);
 			if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
-				associateProviderAccountForUser(user);
+				activateProviderAccountForUser(user);
+			} else if ("false".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER))) {
+				deativateProviderAccountForUser(user);
 			}
 		}
 		catch (Exception e) {
@@ -132,7 +134,7 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		}
 	}
 	
-	private void associateProviderAccountForUser(User user) {
+	private void activateProviderAccountForUser(User user) {
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 			Context.addProxyPrivilege(PrivilegeConstants.GET_PERSONS);
@@ -166,11 +168,9 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		}
 	}
 	
-	private void disAssociateProviderAccountForUser(User user) {
+	private void deativateProviderAccountForUser(User user) {
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
-			Context.addProxyPrivilege(PrivilegeConstants.GET_PERSONS);
-			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 			
 			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
@@ -179,12 +179,10 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			}
 		}
 		catch (Exception e) {
-			log.error("Could not purge provider account associated with user '" + user.getDisplayString(), e);
+			log.error("Could not retire provider account associated with user '" + user.getDisplayString(), e);
 		}
 		finally {
 			Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
-			Context.removeProxyPrivilege(PrivilegeConstants.GET_PERSONS);
-			Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
 			Context.removeProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 		}
 	}

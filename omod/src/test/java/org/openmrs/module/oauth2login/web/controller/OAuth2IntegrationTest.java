@@ -151,7 +151,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 		Assert.assertNotNull(user);
 		
 		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
-		Collection<Provider> possibleProvider = Context.getProviderService().getProvidersByPerson(user.getPerson());
+		Collection<Provider> possibleProvider = Context.getProviderService().getProvidersByPerson(user.getPerson(), false);
 		Assert.assertThat(possibleProvider, hasSize(1));
 		Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 		
