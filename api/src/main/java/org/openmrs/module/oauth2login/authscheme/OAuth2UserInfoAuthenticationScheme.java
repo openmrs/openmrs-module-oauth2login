@@ -11,20 +11,28 @@ package org.openmrs.module.oauth2login.authscheme;
 
 import static org.openmrs.module.oauth2login.OAuth2LoginConstants.AUTH_SCHEME_COMPONENT;
 
+import java.util.Collection;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.Person;
+import org.openmrs.Provider;
 import org.openmrs.User;
+import org.openmrs.api.PersonService;
+import org.openmrs.api.ProviderService;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Authenticated;
 import org.openmrs.api.context.BasicAuthenticated;
+import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.api.context.Credentials;
 import org.openmrs.api.context.Daemon;
 import org.openmrs.api.context.DaoAuthenticationScheme;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.DaemonTokenAware;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +51,13 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 	
 	@Autowired
 	private UserService userService;
+	
+	@Autowired
+	private PersonService personService;
+	
+	@Autowired
+	@Qualifier("providerService")
+	ProviderService ps;
 	
 	public void setDaemonToken(DaemonToken daemonToken) {
 		this.daemonToken = daemonToken;
@@ -89,9 +104,15 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 	}
 	
 	private void createUser(UserInfo userInfo) throws ContextAuthenticationException {
+		User user = null;
 		try {
-			getContextDAO().createUser(userInfo.getOpenmrsUser("n/a"), RandomStringUtils.random(100, true, true),
+			user = getContextDAO().createUser(userInfo.getOpenmrsUser("n/a"), RandomStringUtils.random(100, true, true),
 			    userInfo.getRoleNames());
+			if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
+				associateProviderAccountForUser(user);
+			} else {
+				disAssociateProviderAccountForUser(user);
+			}
 		}
 		catch (Exception e) {
 			throw new ContextAuthenticationException(e.getMessage(), e);
@@ -102,9 +123,69 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		try {
 			UpdateUserTask task = new UpdateUserTask(userService, userInfo);
 			Daemon.runInDaemonThread(task, daemonToken);
+			if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
+				associateProviderAccountForUser(user);
+			}
 		}
 		catch (Exception e) {
 			throw new ContextAuthenticationException(e.getMessage(), e);
+		}
+	}
+	
+	private void associateProviderAccountForUser(User user) {
+		try {
+			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.addProxyPrivilege(PrivilegeConstants.GET_PERSONS);
+			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
+			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
+			
+			Person person = Context.getPersonService().getPerson(user.getPerson().getId());
+			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
+			if (possibleProvider.size() == 0) {
+				Provider provider = new Provider();
+				provider.setIdentifier(user.getSystemId());
+				provider.setPerson(person);
+				provider.setCreator(userService.getUserByUsername("daemon"));
+				ps.saveProvider(provider);
+			} else {
+				for (Provider pd : possibleProvider) {
+					if (pd.getRetired()) {
+						ps.unretireProvider(pd);
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			log.error("Could not create provider account associated with user '" + user.getDisplayString(), e);
+		}
+		finally {
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_PERSONS);
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
+		}
+	}
+	
+	private void disAssociateProviderAccountForUser(User user) {
+		try {
+			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.addProxyPrivilege(PrivilegeConstants.GET_PERSONS);
+			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
+			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
+			
+			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
+			for (Provider provider : possibleProvider) {
+				ps.retireProvider(provider, "Disabling provider account by oaut2login");
+			}
+		}
+		catch (Exception e) {
+			log.error("Could not purge provider account associated with user '" + user.getDisplayString(), e);
+		}
+		finally {
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_PERSONS);
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 		}
 	}
 }
