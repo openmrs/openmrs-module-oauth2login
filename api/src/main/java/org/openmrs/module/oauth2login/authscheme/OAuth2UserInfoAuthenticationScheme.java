@@ -30,6 +30,7 @@ import org.openmrs.api.context.Daemon;
 import org.openmrs.api.context.DaoAuthenticationScheme;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.DaemonTokenAware;
+import org.openmrs.module.oauth2login.OAuth2LoginConstants;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -172,7 +173,7 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 			
 			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
-			possibleProvider.stream().forEach(provider -> ps.retireProvider(provider, "Disabling provider account by oaut2login"));
+			possibleProvider.stream().forEach(provider -> ps.retireProvider(provider, "Disabling provider account by " + OAuth2LoginConstants.MODULE_ARTIFACT_ID));
 		}
 		catch (Exception e) {
 			log.error("Could not retire provider account associated with user '" + user.getDisplayString(), e);
