@@ -150,11 +150,9 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 				provider.setCreator(userService.getUserByUsername("daemon"));
 				ps.saveProvider(provider);
 			} else {
-				for (Provider pd : possibleProvider) {
-					if (pd.getRetired()) {
-						ps.unretireProvider(pd);
-					}
-				}
+				possibleProvider.stream().forEach(provider -> {
+					if (provider.getRetired()) ps.unretireProvider(provider);
+				});
 			}
 		}
 		catch (Exception e) {
@@ -174,9 +172,7 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 			
 			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
-			for (Provider provider : possibleProvider) {
-				ps.retireProvider(provider, "Disabling provider account by oaut2login");
-			}
+			possibleProvider.stream().forEach(provider -> ps.retireProvider(provider, "Disabling provider account by oaut2login"));
 		}
 		catch (Exception e) {
 			log.error("Could not retire provider account associated with user '" + user.getDisplayString(), e);

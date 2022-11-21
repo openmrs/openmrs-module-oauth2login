@@ -138,14 +138,14 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	protected abstract String[] roleNamesToAssert();
 	
-	protected void assertProviderAccountActivation(User user) {
+	protected void assertThatProviderAccountIsActivated(User user) {
 		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 		Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson(), false);
 		Assert.assertThat(possibleProvider, hasSize(1));
 		Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 	}
 	
-	protected void assertProviderAccountDeactivation(User user) {
+	protected void assertThatProviderAccountIsDeactivated(User user) {
 		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 		Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson(), false);
 		Assert.assertThat(possibleProvider, hasSize(0));
