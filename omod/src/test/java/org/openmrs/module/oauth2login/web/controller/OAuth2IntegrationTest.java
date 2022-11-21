@@ -100,7 +100,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	@Autowired
 	@Qualifier("providerService")
-	ProviderService ps;
+	private ProviderService ps;
 	
 	@Override
 	protected Credentials getCredentials() {
@@ -163,7 +163,6 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 		// verif
 		User user = Context.getAuthenticatedUser();
 		Assert.assertNotNull(user);
-		
 		assertAuthenticatedUser(user);
 		Set<String> roleNames = user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toSet());
 
