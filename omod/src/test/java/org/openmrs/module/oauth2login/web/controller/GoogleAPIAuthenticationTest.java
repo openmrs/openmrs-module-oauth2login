@@ -34,6 +34,7 @@ public class GoogleAPIAuthenticationTest extends OAuth2IntegrationTest {
 		Assert.assertEquals("John", user.getGivenName());
 		Assert.assertEquals("Doe", user.getFamilyName());
 		Assert.assertEquals("jdoe@example.com", user.getEmail());
+		assertProviderAccountActivation(user);
 	}
 	
 	@Override

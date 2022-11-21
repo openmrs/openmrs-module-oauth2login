@@ -138,6 +138,20 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	
 	protected abstract String[] roleNamesToAssert();
 	
+	protected void assertProviderAccountActivation(User user) {
+		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+		Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson(), false);
+		Assert.assertThat(possibleProvider, hasSize(1));
+		Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+	}
+	
+	protected void assertProviderAccountDeactivation(User user) {
+		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+		Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson(), false);
+		Assert.assertThat(possibleProvider, hasSize(0));
+		Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+	}
+	
 	@Test
 	public void assertOAuth2Authentication() throws Exception {
 		// pre-verif
@@ -149,11 +163,6 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 		// verif
 		User user = Context.getAuthenticatedUser();
 		Assert.assertNotNull(user);
-		
-		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
-		Collection<Provider> possibleProvider = Context.getProviderService().getProvidersByPerson(user.getPerson(), false);
-		Assert.assertThat(possibleProvider, hasSize(1));
-		Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 		
 		assertAuthenticatedUser(user);
 		Set<String> roleNames = user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toSet());

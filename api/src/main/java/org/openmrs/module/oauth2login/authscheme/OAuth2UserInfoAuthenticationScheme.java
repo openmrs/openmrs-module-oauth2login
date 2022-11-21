@@ -57,7 +57,7 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 	
 	@Autowired
 	@Qualifier("providerService")
-	ProviderService ps;
+	private ProviderService ps;
 	
 	public void setDaemonToken(DaemonToken daemonToken) {
 		this.daemonToken = daemonToken;
@@ -109,9 +109,9 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			user = getContextDAO().createUser(userInfo.getOpenmrsUser("n/a"), RandomStringUtils.random(100, true, true),
 			    userInfo.getRoleNames());
 			if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
-				activateProviderAccountForUser(user);
+				activateProviderAccount(user);
 			} else {
-				deativateProviderAccountForUser(user);
+				deactivateProviderAccount(user);
 			}
 		}
 		catch (Exception e) {
@@ -124,9 +124,9 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			UpdateUserTask task = new UpdateUserTask(userService, userInfo);
 			Daemon.runInDaemonThread(task, daemonToken);
 			if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
-				activateProviderAccountForUser(user);
+				activateProviderAccount(user);
 			} else if ("false".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER))) {
-				deativateProviderAccountForUser(user);
+				deactivateProviderAccount(user);
 			}
 		}
 		catch (Exception e) {
@@ -134,14 +134,14 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		}
 	}
 	
-	private void activateProviderAccountForUser(User user) {
+	private void activateProviderAccount(User user) {
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 			Context.addProxyPrivilege(PrivilegeConstants.GET_PERSONS);
 			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 			
-			Person person = Context.getPersonService().getPerson(user.getPerson().getId());
+			Person person = personService.getPerson(user.getPerson().getId());
 			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
 			if (possibleProvider.size() == 0) {
 				Provider provider = new Provider();
@@ -168,7 +168,7 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		}
 	}
 	
-	private void deativateProviderAccountForUser(User user) {
+	private void deactivateProviderAccount(User user) {
 		try {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
