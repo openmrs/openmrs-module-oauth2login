@@ -48,6 +48,7 @@ The main use case is to help support the management of users and roles **outside
 * Given, middle and last names (managed through the underlying `Person` [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Person.java#L57))
 * Gender (same remark, [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Person.java#L63))
 * [Roles](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L56)
+* Provider account activation (managed through the underlying `Person` [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Provider.java#L26)).
     
 \* _Username and system ID cannot be updated, they are set once and for all at the first authentication of the user._
 
@@ -55,6 +56,7 @@ The main use case is to help support the management of users and roles **outside
 A list of OpenMRS roles can be provided through the user info JSON. This can be done through leveraging the `openmrs.mapping.user.roles` mapping property that holds a pointer to the user info JSON key whose value is a comma-separated list of OpenMRS role names.
 
 For instance a basic user info JSON might look like that:
+
 ```json
 {
   "sub": "4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc",
@@ -84,7 +86,8 @@ Let us start from a sample JSON to understand how the mappings should be set.
   "roles": [
     "Provider",
     "Nurse"
-  ]
+  ],
+  "provider": "true"
 }
 ```
 
@@ -96,12 +99,14 @@ openmrs.mapping.person.givenName=given_name
 openmrs.mapping.person.familyName=family_name
 openmrs.mapping.user.email=email
 openmrs.mapping.user.roles=roles
+openmrs.mapping.user.provider=provider
 ```
 
 #### Example
 If a user authenticates as 'jdoe' with the OAuth 2 provider, OpenMRS will attempt to fetch the user 'jdoe'.
 * If a 'jdoe' user can be found in OpenMRS, then it will updated as per the user info JSON and become the authenticated user.
 * If a 'jdoe' user cannot be found in OpenMRS, it will be created as per the user info JSON and become the authenticated user.
+* 'jdoe' user is also associated to a new provider account if it doen't exist or his existing but retired provider account un-retired. This also happens as the default behaviour if the property `provider` is not set in the `user info  JSON`. The opposite behaviour happens if such setting as `"provider": "false"` is added to the `user info  JSON`.
 
 ## Redirect URL after successful login
 By default the user will be redirected to the root URL `/` after a successul login. The redirect URL can be modified by using the global property (GP) `oauth2login.redirectUriAfterLogin`.
