@@ -52,6 +52,8 @@ public class UserInfo {
 	
 	public static final String PROP_ROLES = MAPPINGS_PFX + "user.roles";
 	
+	public final static String PROP_PROVIDER = MAPPINGS_PFX + "user.provider";
+	
 	private String json; // the user info json
 	
 	private Properties props;

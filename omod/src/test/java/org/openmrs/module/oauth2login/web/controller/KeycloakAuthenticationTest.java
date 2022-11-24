@@ -34,6 +34,7 @@ public class KeycloakAuthenticationTest extends OAuth2IntegrationTest {
 		Assert.assertEquals("Tommy", user.getGivenName());
 		Assert.assertEquals("Atkins", user.getFamilyName());
 		Assert.assertEquals("tatkins@example.com", user.getEmail());
+		assertThatProviderAccountIsActivated(user);
 	}
 	
 	@Override
