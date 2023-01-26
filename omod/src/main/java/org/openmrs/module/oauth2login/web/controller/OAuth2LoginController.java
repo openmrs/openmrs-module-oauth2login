@@ -19,10 +19,18 @@ import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.openmrs.Person;
+import org.openmrs.Provider;
+import org.openmrs.User;
+import org.openmrs.api.PersonService;
+import org.openmrs.api.ProviderService;
+import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
+import org.openmrs.module.oauth2login.OAuth2LoginConstants;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
@@ -43,6 +51,16 @@ public class OAuth2LoginController {
 	private Properties oauth2Props;
 	
 	private RestOperations restTemplate; // to fetch user infos from OAuth2 provider
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private PersonService personService;
+	
+	@Autowired
+	@Qualifier("providerService")
+	private ProviderService ps;
 	
 	@Autowired
 	public void setRestTemplate(@Qualifier("oauth2.restTemplate") RestOperations restTemplate) {
@@ -75,6 +93,13 @@ public class OAuth2LoginController {
 		final UserInfo userInfo = new UserInfo(oauth2Props, userInfoJson);
 		try {
 			Context.authenticate(new OAuth2TokenCredentials(userInfo));
+			if (Context.isAuthenticated()) {
+				if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
+					activateProviderAccount(Context.getAuthenticatedUser());
+				} else {
+					deactivateProviderAccount(Context.getAuthenticatedUser());
+				}
+			}
 		}
 		catch (ContextAuthenticationException e) {
 			log.warn("The user '" + userInfo + "' could not be authenticated with the identity provider.");
@@ -85,6 +110,55 @@ public class OAuth2LoginController {
 		}
 		
 		return new ModelAndView("redirect:" + getRedirectUri());
+	}
+	
+	private void activateProviderAccount(User user) {
+		try {
+			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.addProxyPrivilege(PrivilegeConstants.GET_PERSONS);
+			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
+			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
+			
+			Person person = personService.getPerson(user.getPerson().getId());
+			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
+			if (possibleProvider.size() == 0) {
+				Provider provider = new Provider();
+				provider.setIdentifier(user.getSystemId());
+				provider.setPerson(person);
+				provider.setCreator(userService.getUserByUsername("daemon"));
+				ps.saveProvider(provider);
+			} else {
+				possibleProvider.stream().forEach(provider -> {
+					if (provider.getRetired()) ps.unretireProvider(provider);
+				});
+			}
+		}
+		catch (Exception e) {
+			log.error("Could not create provider account associated with user '" + user.getDisplayString(), e);
+		}
+		finally {
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_PERSONS);
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
+		}
+	}
+	
+	private void deactivateProviderAccount(User user) {
+		try {
+			Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
+			
+			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
+			possibleProvider.stream().forEach(provider -> ps.retireProvider(provider, "Disabling provider account by " + OAuth2LoginConstants.MODULE_ARTIFACT_ID));
+		}
+		catch (Exception e) {
+			log.error("Could not retire provider account associated with user '" + user.getDisplayString(), e);
+		}
+		finally {
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
+		}
 	}
 	
 	private String getRedirectUri() {
