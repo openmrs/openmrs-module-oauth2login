@@ -5,7 +5,7 @@ This module delegates user authentication to an OAuth 2.0 resource provider. In 
 
 
 ## Overview
-It suffices to install the module for OpenMRS' default authentication scheme to become inactive and for the module custom authentication scheme to take over.
+It suffices to install the module for OpenMRS' default basic authentication scheme to become inactive and for the module OAuth 2 based authentication scheme to take over.
 
 The module consumes a configuration file **oauth2.properties** that must be dropped in the OpenMRS app data directory:
 
@@ -40,14 +40,22 @@ The authentication is based on the **username**.
 However at first the user might not exist yet in OpenMRS and as a convenience the module will create a new OpenMRS user on the fly. This is why a mapping mechanism must exist between the OAuth 2 provider user infos and the OpenMRS users, at minima to find out what the OpenMRS username will be.
 
 #### Keeping identities in sync with OpenMRS
-The main use case is to help support the management of users and roles **outside** of OpenMRS, with the identity provider. The `User` pieces of information that are mapped to OpenMRS user properties and that can be updated at each authentication are listed here:
+The main use case is to help support the management of users and roles **outside** of OpenMRS, with the identity provider (IdP). The pieces of information about the OpenMRS' `User` that can be provided by the IdP through its user info JSON are listed here:
 
 * [Username](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L52) \*
+  * A string, eg. `"jdoe"`.
 * [System ID](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L50) \*
+  * A string, eg. `"4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc"`.
 * [Email](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L54)
+  * A string, eg. `"jdoe@example.com"`.
 * Given, middle and last names (managed through the underlying `Person` [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Person.java#L57))
 * Gender (same remark, [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Person.java#L63))
 * [Roles](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/User.java#L56)
+  * A JSON array of strings, eg. `["Nurse", "Clinical Advisor"]`.
+* Provider account activation (managed through the underlying `Person` [here](https://github.com/openmrs/openmrs-core/blob/aeaa7094bbe365dad52e39b2e4935b1a364e6084/api/src/main/java/org/openmrs/Provider.java#L26)).
+  * A boolean as string `"true"` or `"false"`.
+    * `true` activates the provider account for the authenticated user, this is also the default if nothing is specified.
+    * `false` deactivates the provider account for the authenticated user.
     
 \* _Username and system ID cannot be updated, they are set once and for all at the first authentication of the user._
 
@@ -55,6 +63,7 @@ The main use case is to help support the management of users and roles **outside
 A list of OpenMRS roles can be provided through the user info JSON. This can be done through leveraging the `openmrs.mapping.user.roles` mapping property that holds a pointer to the user info JSON key whose value is a comma-separated list of OpenMRS role names.
 
 For instance a basic user info JSON might look like that:
+
 ```json
 {
   "sub": "4e3074d6-5e9f-4707-84f1-ccb2aa2ab3bc",
@@ -84,7 +93,8 @@ Let us start from a sample JSON to understand how the mappings should be set.
   "roles": [
     "Provider",
     "Nurse"
-  ]
+  ],
+  "provider": "true"
 }
 ```
 
@@ -96,12 +106,16 @@ openmrs.mapping.person.givenName=given_name
 openmrs.mapping.person.familyName=family_name
 openmrs.mapping.user.email=email
 openmrs.mapping.user.roles=roles
+openmrs.mapping.user.provider=provider
 ```
 
 #### Example
 If a user authenticates as 'jdoe' with the OAuth 2 provider, OpenMRS will attempt to fetch the user 'jdoe'.
 * If a 'jdoe' user can be found in OpenMRS, then it will updated as per the user info JSON and become the authenticated user.
 * If a 'jdoe' user cannot be found in OpenMRS, it will be created as per the user info JSON and become the authenticated user.
+* 'jdoe' user is also associated to a new provider account if the `provider` is unspecified or set to `true`.
+  * A new provider account will be created if it doesn't exist yet.
+  * If the provider account already exists and is retired, it will be unretired.
 
 ## Redirect URL after successful login
 By default the user will be redirected to the root URL `/` after a successul login. The redirect URL can be modified by using the global property (GP) `oauth2login.redirectUriAfterLogin`.
@@ -110,45 +124,39 @@ For example when the module is used within the Reference Application with the tw
 /referenceapplication/login.page?redirectUrl=/index.html
 ```
 
-## Two-step login with OpenMRS 2.x
-In OpenMRS 2.x it is necessary to explicitely enable the two-step login for the OAuth2 delegated authentication to work properly. To do so make sure that the following global property exists with a non-blank value: `referenceapplication.locationUserPropertyName`.
+## Two-step Login with OpenMRS 2.x
+In OpenMRS 2.x it is necessary to explicitely enable the two-step login for the OAuth 2 delegated authentication to work properly. To do so make sure that the following global property exists with a non-blank value: `referenceapplication.locationUserPropertyName`.
 
-## Service Account Authentication
-Not all interaction with OpenMRS is by human users, some is server-to-server interaction, third party systems need to 
-authenticate with OpenMRS in order to access desired resources, these applications should be able to provide a token 
-obtained from an identity provider that can be trusted by OpenMRS to authenticate and authorize them to access restricted 
-resources, service account authentication is aimed at addressing this requirement.
+## Service Accounts
+Service Accounts are used to authenticate applications or clients that are not human users. They support authenticated server-to-server interactions with OpenMRS when third party applications or clients need to access OpenMRS resources securely. Service accounts should be able to provide a token 
+obtained from an IdP that and that can be trusted by OpenMRS in order to authenticate and authorize them to access restricted resources.
 
 #### How it Works
 The third party system obtains a [JWT](https://jwt.io/) token from an identity provider and then for any subsequent requests, it
-sets it as the value of the authorization header with the scheme set to **Bearer** or a special header named **X-JWT-Assertion** as shown below,
+sets it as the value of the authorization header with the scheme set to `Bearer` or a special header named `X-JWT-Assertion`as shown below:
 
-```Authorization: Bearer YOUR-JWT-TOKEN```
+```Authorization: Bearer <YOUR-JWT-TOKEN>```
 
 OR
 
-```X-JWT-Assertion: YOUR-JWT-TOKEN```
+```X-JWT-Assertion: <YOUR-JWT-TOKEN>```
 
-When OpenMRS receives the request, it reads the JWT from the header, parses and verifies its signature, if all is good, 
-it goes ahead to read the username from the JWT payload and uses it to authenticate the request using this module's 
-Oauth2 authentication scheme, this assumes a user account already exists in OpenMRS with the specified username.
+Upon receiving the HTTP request, OpenMRS reads the JWT from the header and verifies its signature. If the signature can be verified it goes ahead and reads the username from the JWT payload and then uses it to authenticate the request using the module's authentication OAuth 2 based authentication scheme. **This assumes a user account already exists in OpenMRS with the specified username.**
 
 #### Configuration
-In order for OpenMRS to verify the signature of a JWT, it needs a key to do so. For enhanced security, the module only 
-supports asymmetric algorithms. Currently, only RSA based algorithms(RS256, RS384, RS512, PS256, PS384, PS512) are 
+OpenMRS needs a key to verify the signature of a JWT. For enhanced security, the module only 
+supports asymmetric algorithms. Currently, only RSA-based algorithms (namely RS256, RS384, RS512, PS256, PS384, PS512) are 
 supported. Therefore, you need to provide a public key from the identity provider to be used to verify the JWT 
-signatures. The public key can be configured in 3 ways and below is the lookup order,
-1. From the **oauth2.properties** file as the value of the **publicKey** property
-2. From a specific file located in the application data directory or its subdirectories, this file is configured via the
-   **oauth2.properties** file as the value of the **publicKeyFilename** property
-3. The module fetches all known keys from the identity provider at the url configured as the value of the **keysUrl** 
-   property in the **oauth2.properties** file
+signatures. The public key can be configured in 3 ways and below is the lookup order:
+1. From the **oauth2.properties** file as the value of the `publicKey` property.
+2. From a specific file located in the application data directory or its subdirectories, this file is configured via the **oauth2.properties** file as the value of the `publicKeyFilename` property.
+3. The module fetches all known keys from the identity provider at the URL configured as the value of the `keysUrl` property in the **oauth2.properties** file.
 
-## Configuration Guides
+## IdP Configuration Guides
 
 1. [Guide for Keycloak](readme/Keycloak.md)
 2. [Guide for Google API](readme/GoogleAPI.md)
 
-## Requirements
+## Platform Requirements
 OpenMRS Core 2.2.1 or Core 2.3.0 and above.
 

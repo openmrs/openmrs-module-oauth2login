@@ -15,6 +15,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.openmrs.User;
+import org.openmrs.api.ProviderService;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Authenticated;
 import org.openmrs.api.context.BasicAuthenticated;
@@ -25,6 +26,7 @@ import org.openmrs.api.context.DaoAuthenticationScheme;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.DaemonTokenAware;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +45,10 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 	
 	@Autowired
 	private UserService userService;
+	
+	@Autowired
+	@Qualifier("providerService")
+	private ProviderService ps;
 	
 	public void setDaemonToken(DaemonToken daemonToken) {
 		this.daemonToken = daemonToken;
@@ -92,6 +98,7 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		try {
 			getContextDAO().createUser(userInfo.getOpenmrsUser("n/a"), RandomStringUtils.random(100, true, true),
 			    userInfo.getRoleNames());
+
 		}
 		catch (Exception e) {
 			throw new ContextAuthenticationException(e.getMessage(), e);

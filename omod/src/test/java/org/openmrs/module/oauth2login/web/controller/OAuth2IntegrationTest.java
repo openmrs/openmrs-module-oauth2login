@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -28,7 +29,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.openmrs.Provider;
 import org.openmrs.User;
+import org.openmrs.api.ProviderService;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.Credentials;
 import org.openmrs.module.DaemonTokenAware;
@@ -37,6 +40,7 @@ import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
 import org.openmrs.util.OpenmrsConstants;
+import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.client.RestOperations;
@@ -94,6 +98,10 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	@Autowired
 	private DaemonTokenAware authenticationScheme;
 	
+	@Autowired
+	@Qualifier("providerService")
+	private ProviderService ps;
+	
 	@Override
 	protected Credentials getCredentials() {
 		
@@ -129,6 +137,20 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	protected abstract void assertAuthenticatedUser(User user);
 	
 	protected abstract String[] roleNamesToAssert();
+	
+	protected void assertThatProviderAccountIsActivated(User user) {
+		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+		Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson(), false);
+		Assert.assertThat(possibleProvider, hasSize(1));
+		Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+	}
+	
+	protected void assertThatProviderAccountIsDeactivated(User user) {
+		Context.addProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+		Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson(), false);
+		Assert.assertThat(possibleProvider, hasSize(0));
+		Context.removeProxyPrivilege(PrivilegeConstants.GET_PROVIDERS);
+	}
 	
 	@Test
 	public void assertOAuth2Authentication() throws Exception {

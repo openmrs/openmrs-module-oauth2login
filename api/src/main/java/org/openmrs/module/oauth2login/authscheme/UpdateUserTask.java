@@ -68,10 +68,6 @@ public class UpdateUserTask implements Runnable {
 			if (value == null) {
 				return;
 			}
-			//we don't want to update uuids
-			if("uuid".equals(name)){
-				return;
-			}
 			
 			Object destPropertyValue = new BeanWrapperImpl(dest).getPropertyValue(name);
 			if (value.equals(destPropertyValue)) {
@@ -97,8 +93,22 @@ public class UpdateUserTask implements Runnable {
 	 * @return The updated user.
 	 */
 	private User updated(User user) {
+		
 		try {
 			User openmrsUser = userInfo.getOpenmrsUser();
+			// UUIDs should be stable
+			if (user.getUuid() != null) {
+				openmrsUser.setUuid(user.getUuid());
+			}
+			
+			if (user.getPerson() != null && user.getPerson().getUuid() != null) {
+				openmrsUser.getPerson().setUuid(user.getPerson().getUuid());
+			}
+			
+			if (user.getPerson() != null && user.getPerson().getPersonName() != null && user.getPerson().getPersonName().getUuid() != null) {
+				openmrsUser.getPerson().getPersonName().setUuid(user.getPerson().getPersonName().getUuid());
+			}
+			
 			new NullAwareBeanUtilsBean().copyProperties(user, openmrsUser);
 		}
 		catch (IllegalAccessException | InvocationTargetException e) {
@@ -108,6 +118,7 @@ public class UpdateUserTask implements Runnable {
 		if (userInfo.getRoleNames() != null) {
 			user.setRoles(userInfo.getRoleNames().stream().map(roleName -> userService.getRole(roleName)).filter(r -> r != null).collect(Collectors.toSet()));
 		}
+		
 		return user;
 	}
 }
