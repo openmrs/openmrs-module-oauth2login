@@ -98,7 +98,7 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		try {
 			getContextDAO().createUser(userInfo.getOpenmrsUser("n/a"), RandomStringUtils.random(100, true, true),
 			    userInfo.getRoleNames());
-
+			
 		}
 		catch (Exception e) {
 			throw new ContextAuthenticationException(e.getMessage(), e);

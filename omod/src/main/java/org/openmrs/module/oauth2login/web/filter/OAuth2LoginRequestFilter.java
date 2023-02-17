@@ -9,6 +9,7 @@
  */
 package org.openmrs.module.oauth2login.web.filter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.Context;
 
 import javax.servlet.*;
@@ -26,16 +27,23 @@ import java.util.List;
 public class OAuth2LoginRequestFilter implements Filter {
 	
 	/**
-	 * The list of URIs that should not be filtered because they are actually served by this module.
-	 * In other words there are controllers within this module that implement their behaviour, and
-	 * we need to let those controllers run, authenticated or not.
+	 * The list of servlet paths that should not be filtered because they are actually served by
+	 * this module. In other words there are controllers within this module that implement their
+	 * behaviour, and we need to let those controllers run, authenticated or not.
 	 */
-	private List<String> moduleURIs;
+	private List<String> servletPaths;
+	
+	/**
+	 * The list of requestURIs that should not be filtered.
+	 */
+	private List<String> requestURIs;
 	
 	@Override
 	public void init(FilterConfig filterConfig) {
-		String param = filterConfig.getInitParameter("moduleURIs");
-		moduleURIs = Arrays.asList(param.split(","));
+		String servletPathsConfig = filterConfig.getInitParameter("servletPaths");
+		servletPaths = Arrays.asList(servletPathsConfig.split(","));
+		String requestURIsConfig = filterConfig.getInitParameter("requestURIs");
+		requestURIs = Arrays.asList(requestURIsConfig.split(","));
 	}
 	
 	@Override
@@ -49,13 +57,14 @@ public class OAuth2LoginRequestFilter implements Filter {
 		HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
 		HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
 		
-		String path = httpRequest.getServletPath();
-		path = (path == null) ? "" : path;
-		
-		if (!moduleURIs.contains(path)) {
+		String servletPath = StringUtils.defaultString(httpRequest.getServletPath());
+		String requestURI = StringUtils.defaultString(httpRequest.getRequestURI());
+		requestURI=StringUtils.removeStart(requestURI,httpRequest.getContextPath());
+
+		if (!requestURIs.contains(requestURI) && !servletPaths.contains(servletPath)) {
 			
 			// Logout (forwarding)
-			if (isLogoutRequest(path, httpRequest)) {
+			if (isLogoutRequest(servletPath, httpRequest)) {
 				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2logout");
 				return;
 			}
