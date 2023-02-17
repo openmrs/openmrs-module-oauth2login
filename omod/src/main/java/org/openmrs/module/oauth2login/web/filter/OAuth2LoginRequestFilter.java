@@ -27,7 +27,7 @@ import java.util.List;
 public class OAuth2LoginRequestFilter implements Filter {
 	
 	/**
-	 * The list of Servlet Paths that should not be filtered because they are actually served by
+	 * The list of servlet paths that should not be filtered because they are actually served by
 	 * this module. In other words there are controllers within this module that implement their
 	 * behaviour, and we need to let those controllers run, authenticated or not.
 	 */
