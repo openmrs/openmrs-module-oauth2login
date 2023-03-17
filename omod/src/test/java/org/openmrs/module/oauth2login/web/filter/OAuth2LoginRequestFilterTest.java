@@ -127,26 +127,27 @@ public class OAuth2LoginRequestFilterTest {
 		verify(response, never()).sendRedirect(any(String.class));
 		verify(chain, times(1)).doFilter(request, response);
 	}
+	
 	@Test
 	public void requestUriHandledUri_shouldProceedWhenNotAuthenticated() throws Exception {
 		// setup
 		MockHttpServletRequest request = new MockHttpServletRequest();
 		HttpServletResponse response = mock(HttpServletResponse.class);
 		FilterChain chain = mock(FilterChain.class);
-
+		
 		Context.setUserContext(new UserContext(null));
 		when(Context.isAuthenticated()).thenReturn(false);
-
+		
 		// replay
 		request.setRequestURI("/openmrs/ws/rest/v1/session");
 		request.setContextPath("/openmrs");
 		filter.doFilter(request, response, chain);
-
+		
 		// verify
 		verify(response, never()).sendRedirect(any(String.class));
 		verify(chain, times(1)).doFilter(request, response);
 	}
-
+	
 	@Test
 	public void secureUri_shouldProceedWhenAuthenticated() throws Exception {
 		// setup
