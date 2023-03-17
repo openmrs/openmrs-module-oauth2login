@@ -59,8 +59,8 @@ public class OAuth2LoginRequestFilter implements Filter {
 		
 		String servletPath = StringUtils.defaultString(httpRequest.getServletPath());
 		String requestURI = StringUtils.defaultString(httpRequest.getRequestURI());
-		requestURI=StringUtils.removeStart(requestURI,httpRequest.getContextPath());
-
+		requestURI = StringUtils.removeStart(requestURI, httpRequest.getContextPath());
+		
 		if (!requestURIs.contains(requestURI) && !servletPaths.contains(servletPath)) {
 			
 			// Logout (forwarding)

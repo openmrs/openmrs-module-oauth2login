@@ -40,8 +40,7 @@ public class CustomDispatcherServlet implements ServletContextAware {
 		
 		try {
 			XmlWebApplicationContext appContext = new XmlWebApplicationContext();
-			appContext.setConfigLocation("classpath:webModuleApplicationContext.xml");
-			
+			appContext.setConfigLocation("classpath*:/oauth2login/webApplicationContext.xml");
 			final String servletName = OAuth2LoginConstants.MODULE_ARTIFACT_ID;
 			
 			ServletRegistration servletReg = servletContext.addServlet(servletName, new DispatcherServlet(appContext));
