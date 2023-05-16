@@ -38,6 +38,8 @@ public class UserInfo {
 	
 	public final static String PROP_USERNAME = MAPPINGS_PFX + "user.username";
 	
+	public final static String PROP_USERNAME_SERVICE_ACCOUNT = MAPPINGS_PFX + "user.username.serviceAccount";
+	
 	public final static String PROP_EMAIL = MAPPINGS_PFX + "user.email";
 	
 	public final static String PROP_GIVEN_NAME = MAPPINGS_PFX + "person.givenName";

@@ -90,7 +90,14 @@ public class OAuth2ServiceAccountFilter implements Filter {
 				//Ignore if this is not a JWT token
 				if (parts.length == 3) {
 					try {
+						//for Service Account it's possible to use another property to retrieve the username
 						Properties props = Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class);
+						String serviceAccountProperty = props.getProperty(UserInfo.PROP_USERNAME_SERVICE_ACCOUNT, null);
+						if (serviceAccountProperty != null) {
+							props = (Properties) props.clone();
+							props.put(UserInfo.PROP_USERNAME, serviceAccountProperty);
+						}
+						
 						Claims claims = JwtUtils.parseAndVerifyToken(token, props);
 						String userInfoJson = JsonUtil.toJson(claims);
 						Context.authenticate(new OAuth2TokenCredentials(new UserInfo(props, userInfoJson), true));
