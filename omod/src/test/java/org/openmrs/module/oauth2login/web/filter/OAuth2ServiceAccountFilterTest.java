@@ -18,8 +18,6 @@ import java.util.Properties;
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.jose4j.json.JsonUtil;
 import org.junit.After;
 import org.junit.Assert;
@@ -27,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
