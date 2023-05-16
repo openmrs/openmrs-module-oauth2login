@@ -131,6 +131,17 @@ In OpenMRS 2.x it is necessary to explicitely enable the two-step login for the 
 Service Accounts are used to authenticate applications or clients that are not human users. They support authenticated server-to-server interactions with OpenMRS when third party applications or clients need to access OpenMRS resources securely. Service accounts should be able to provide a token 
 obtained from an IdP that and that can be trusted by OpenMRS in order to authenticate and authorize them to access restricted resources.
 
+### Service Accounts and Azure AD
+To activate a service account with Azure, a resource identifier (application ID URI) should be activated for the application. 
+See https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow#first-case-access-token-request-with-a-shared-secret
+
+The Access token provided by Azure AD won't contain the same claims as the current token ( `email`, `first_name`,...) and could be an issue if the email is used as the username.
+To support this token and be able to use another claim to retrieve the user in OpenMRS, the property `openmrs.mapping.user.username.serviceAccount` can be defined in the file `oauth2.properties`.
+
+See [azure/oauth2.properties](./omod/src/test/resources/azure/oauth2.properties) for a configuration example.
+
+In OpenMRS, a user with a `username` or `system_id` corresponding to this property should be created. `system_id` should be used if the email is used as `username`. 
+
 #### How it Works
 The third party system obtains a [JWT](https://jwt.io/) token from an identity provider and then for any subsequent requests, it
 sets it as the value of the authorization header with the scheme set to `Bearer` or a special header named `X-JWT-Assertion`as shown below:

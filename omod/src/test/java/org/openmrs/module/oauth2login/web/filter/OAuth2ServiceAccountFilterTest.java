@@ -1,8 +1,9 @@
 package org.openmrs.module.oauth2login.web.filter;
 
 import static org.apache.commons.lang3.reflect.ConstructorUtils.getAccessibleConstructor;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
 import static org.openmrs.module.oauth2login.OAuth2LoginConstants.OAUTH_PROP_BEAN_NAME;
 import static org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter.HEADER_NAME_AUTH;
 import static org.openmrs.module.oauth2login.web.filter.OAuth2ServiceAccountFilter.HEADER_NAME_X_JWT_ASSERT;
@@ -17,12 +18,16 @@ import java.util.Properties;
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jose4j.json.JsonUtil;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.openmrs.api.context.Context;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
@@ -79,6 +84,7 @@ public class OAuth2ServiceAccountFilterTest {
 	public void doFilter_shouldAuthenticateTheRequestWithATokenSpecifiedWithAuthHeaderAndBearerScheme() throws Exception {
 		final String jwtToken = "header.payload.signature";
 		when(mockRequest.getHeader(HEADER_NAME_AUTH)).thenReturn(SCHEME_BEARER + " " + jwtToken);
+		
 		when(Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class)).thenReturn(mockProps);
 		final String propName = "testProperty";
 		final String username = "testUsername";
@@ -91,9 +97,51 @@ public class OAuth2ServiceAccountFilterTest {
 		    mockUserInfo, true).thenReturn(mockCredentials);
 		
 		filter.doFilter(mockRequest, null, mockFilterChain);
+		//one call is made to check if the property PROP_USERNAME_SERVICE_ACCOUNT is defined.
+		verify(mockProps, times(1)).getProperty(UserInfo.PROP_USERNAME_SERVICE_ACCOUNT, null);
+		//no clone as no PROP_USERNAME_SERVICE_ACCOUNT property is defined
+		verify(mockProps, never()).clone();
+		verifyStatic();
+		Context.authenticate(mockCredentials);
+	}
+	
+	@Test
+	public void doFilter_shouldAuthenticateTheRequestWithATokenSpecifiedWithAuthHeaderAndBearerSchemeAndDedicatedServiceAccount()
+	        throws Exception {
+		final String jwtToken = "header.payload.signature";
+		when(mockRequest.getHeader(HEADER_NAME_AUTH)).thenReturn(SCHEME_BEARER + " " + jwtToken);
+		Properties clonedProperties = new Properties();
+		Properties props = new Properties() {
+			
+			@Override
+			public synchronized Object clone() {
+				return clonedProperties;
+			}
+		};
+		final String propNameThatWontBeUsed = "testPropertyNotUsed";
+		final String propNameThatWillBeUsed = "testPropertyUsed";
+		final String username = "testUsernameServiceAccount";
+		props.setProperty(UserInfo.PROP_USERNAME, propNameThatWontBeUsed);
+		props.setProperty(UserInfo.PROP_USERNAME_SERVICE_ACCOUNT, propNameThatWillBeUsed);
+		clonedProperties.setProperty(UserInfo.PROP_USERNAME, "NeverUsedProperty");
+		clonedProperties.setProperty(UserInfo.PROP_USERNAME_SERVICE_ACCOUNT, propNameThatWillBeUsed);
+		
+		when(Context.getRegisteredComponent(OAUTH_PROP_BEAN_NAME, Properties.class)).thenReturn(props);
+		Claims testClaims = new DefaultClaims(Collections.singletonMap(propNameThatWillBeUsed, username));
+		when(JwtUtils.parseAndVerifyToken(jwtToken, clonedProperties)).thenReturn(testClaims);
+		whenNew(getAccessibleConstructor(UserInfo.class, Properties.class, String.class)).withArguments(clonedProperties,
+		    JsonUtil.toJson(testClaims)).thenReturn(mockUserInfo);
+		whenNew(getAccessibleConstructor(OAuth2TokenCredentials.class, UserInfo.class, boolean.class)).withArguments(
+		    mockUserInfo, true).thenReturn(mockCredentials);
+		
+		filter.doFilter(mockRequest, null, mockFilterChain);
 		
 		verifyStatic();
 		Context.authenticate(mockCredentials);
+		Assert.assertEquals("The initial properties object should not be changed for username", propNameThatWontBeUsed,
+		    props.get(UserInfo.PROP_USERNAME));
+		Assert.assertEquals("The cloned properties will be changed for username property",
+		    propNameThatWillBeUsed, clonedProperties.get(UserInfo.PROP_USERNAME));
 	}
 	
 	@Test
