@@ -137,8 +137,8 @@ public class OAuth2ServiceAccountFilterTest {
 		Context.authenticate(mockCredentials);
 		Assert.assertEquals("The initial properties object should not be changed for username", propNameThatWontBeUsed,
 		    props.get(UserInfo.PROP_USERNAME));
-		Assert.assertEquals("The cloned properties will be changed for username property",
-		    propNameThatWillBeUsed, clonedProperties.get(UserInfo.PROP_USERNAME));
+		Assert.assertEquals("The cloned properties will be changed for username property", propNameThatWillBeUsed,
+		    clonedProperties.get(UserInfo.PROP_USERNAME));
 	}
 	
 	@Test

@@ -17,9 +17,9 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,7 +43,8 @@ import org.openmrs.util.OpenmrsConstants;
 import org.openmrs.util.PrivilegeConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.web.client.RestOperations;
+import org.springframework.security.oauth2.client.OAuth2RestOperations;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
 
 public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTest {
 	
@@ -84,7 +85,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	}
 	
 	@Mock
-	private RestOperations testRestTemplate;
+	private OAuth2RestOperations testRestTemplate;
 	
 	@Autowired
 	protected OAuth2LoginController controller;
@@ -126,7 +127,11 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 		
 		controller.setRestTemplate(testRestTemplate);
 		when(testRestTemplate.getForObject(eq(new URI(userInfoUri)), eq(String.class))).thenReturn(getUserInfoJson());
-		
+		DefaultOAuth2AccessToken oauthToken = new DefaultOAuth2AccessToken("");
+		Map<String, Object> additionalInfo = new HashMap<>();
+		additionalInfo.put("id_token", "myToken");
+		oauthToken.setAdditionalInformation(additionalInfo);
+		when(testRestTemplate.getAccessToken()).thenReturn(oauthToken);
 		//		// Ideally we should do something like this:
 		//		User u = Context.getAuthenticatedUser();
 		//		Context.becomeUser("daemon");
@@ -153,7 +158,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	}
 	
 	@Test
-	public void assertOAuth2Authentication() throws Exception {
+	public void assertOAuth2Authentication() {
 		// pre-verif
 		Assert.assertFalse(Context.isAuthenticated());
 		
@@ -165,9 +170,8 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 		Assert.assertNotNull(user);
 		assertAuthenticatedUser(user);
 		Set<String> roleNames = user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toSet());
-
-		Set<String> expectedRoleNames = new HashSet<>(Arrays.asList(roleNamesToAssert()));
+		
 		Assert.assertThat(roleNames, hasSize(CollectionUtils.size(roleNamesToAssert())));
-        Assert.assertThat(roleNames, containsInAnyOrder(roleNamesToAssert()));
+		Assert.assertThat(roleNames, containsInAnyOrder(roleNamesToAssert()));
 	}
 }
