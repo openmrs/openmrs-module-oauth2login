@@ -18,6 +18,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,14 +42,42 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class OAuth2BeanFactory {
 	
+	private static final Pattern ENV_PATTERN = Pattern.compile("\\$\\{([^}]+)}");
+	
 	protected static final Log LOG = LogFactory.getLog(OAuth2BeanFactory.class);
 	
 	public static Properties getProperties(Path path) throws IOException {
 		Properties props = new Properties();
-		try(InputStream inputStream=Files.newInputStream(path)) {
-			props.load( new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+		try (InputStream inputStream = Files.newInputStream(path)) {
+			props.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+			for (String key : props.stringPropertyNames()) {
+				String value = props.getProperty(key);
+				props.setProperty(key, resolveEnvVariables(value));
+			}
 		}
 		return props;
+	}
+	
+	/**
+	 * Resolves environment variables in the given string.
+	 * <p>
+	 * This method searches for placeholders in the format ${ENV_VAR} within the input string and
+	 * replaces them with the corresponding environment variable values. It first checks system
+	 * properties and then environment variables for the value of each placeholder.
+	 * 
+	 * @param value the input string containing placeholders for environment variables
+	 * @return the input string with all environment variables resolved
+	 */
+	public static String resolveEnvVariables(String value) {
+		Matcher matcher = ENV_PATTERN.matcher(value);
+		StringBuffer buffer = new StringBuffer();
+		while (matcher.find()) {
+			String envVar = matcher.group(1);
+			String envValue = System.getProperty(envVar, System.getenv(envVar));
+			matcher.appendReplacement(buffer, Matcher.quoteReplacement(envValue != null ? envValue : matcher.group(0)));
+		}
+		matcher.appendTail(buffer);
+		return buffer.toString();
 	}
 	
 	public static Path getOAuth2PropertiesPath() {
