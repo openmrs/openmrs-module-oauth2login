@@ -19,7 +19,6 @@ import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openmrs.Person;
 import org.openmrs.Provider;
 import org.openmrs.User;
 import org.openmrs.api.PersonService;
@@ -36,6 +35,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.OAuth2RestOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.RestOperations;
@@ -94,6 +94,10 @@ public class OAuth2LoginController {
 		try {
 			Context.authenticate(new OAuth2TokenCredentials(userInfo));
 			if (Context.isAuthenticated()) {
+				User user = Context.getAuthenticatedUser();
+				final String idToken = ((OAuth2RestOperations) restTemplate).getAccessToken().getAdditionalInformation()
+				        .get("id_token").toString();
+				user.setUserProperty(OAuth2LoginConstants.USER_PROP_ID_TOKEN, idToken);
 				if ("true".equalsIgnoreCase(userInfo.getString(UserInfo.PROP_PROVIDER, "true"))) {
 					activateProviderAccount(Context.getAuthenticatedUser());
 				} else {
@@ -119,17 +123,17 @@ public class OAuth2LoginController {
 			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 			
-			Person person = personService.getPerson(user.getPerson().getId());
 			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
 			if (possibleProvider.size() == 0) {
 				Provider provider = new Provider();
 				provider.setIdentifier(user.getSystemId());
-				provider.setPerson(person);
+				provider.setPerson(personService.getPerson(user.getPerson().getId()));
 				provider.setCreator(userService.getUserByUsername("daemon"));
 				ps.saveProvider(provider);
 			} else {
 				possibleProvider.stream().forEach(provider -> {
-					if (provider.getRetired()) ps.unretireProvider(provider);
+					if (provider.getRetired())
+						ps.unretireProvider(provider);
 				});
 			}
 		}
@@ -150,7 +154,8 @@ public class OAuth2LoginController {
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_PROVIDERS);
 			
 			Collection<Provider> possibleProvider = ps.getProvidersByPerson(user.getPerson());
-			possibleProvider.stream().forEach(provider -> ps.retireProvider(provider, "Disabling provider account by " + OAuth2LoginConstants.MODULE_ARTIFACT_ID));
+			possibleProvider.stream().forEach(provider -> ps.retireProvider(provider,
+			    "Disabling provider account by " + OAuth2LoginConstants.MODULE_ARTIFACT_ID));
 		}
 		catch (Exception e) {
 			log.error("Could not retire provider account associated with user '" + user.getDisplayString(), e);

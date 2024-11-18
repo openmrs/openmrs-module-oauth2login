@@ -25,4 +25,6 @@ public class OAuth2LoginConstants {
 	
 	public static final String OAUTH_PROP_BEAN_NAME = "oauth2.properties";
 	
+	public static final String USER_PROP_ID_TOKEN = "oauth2IdToken";
+	
 }
