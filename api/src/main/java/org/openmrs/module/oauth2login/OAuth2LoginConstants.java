@@ -27,4 +27,6 @@ public class OAuth2LoginConstants {
 	
 	public static final String USER_PROP_ID_TOKEN = "oauth2IdToken";
 	
+	public static final String OAUTH2_ENABLED_PROPERTY = "oauth2.enabled";
+	
 }
