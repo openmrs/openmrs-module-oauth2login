@@ -52,6 +52,44 @@ public class CustomLogoutSuccessHandlerTest {
 		
 		verify(redirectStrategy, times(1)).sendRedirect(request, response,
 		    "http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout?id_token_hint=" + idToken);
-		
 	}
+	
+	@Test
+	public void onLogoutSuccess_shouldNotSetIdTokenIfUserIsNotAuthenticated() throws IOException, ServletException {
+		PowerMockito.mockStatic(Context.class);
+		CustomLogoutSuccessHandler customLogoutSuccessHandler = new CustomLogoutSuccessHandler();
+		RedirectStrategy redirectStrategy = mock(RedirectStrategy.class);
+		customLogoutSuccessHandler.setRedirectStrategy(redirectStrategy);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		HttpServletResponse response = mock(HttpServletResponse.class);
+		
+		customLogoutSuccessHandler.onLogoutSuccess(request, response, null);
+		
+		PowerMockito.verifyStatic();
+		Context.logout();
+		
+		verify(redirectStrategy).sendRedirect(request, response,
+		    "http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout?client_id=openmrs");
+	}
+	
+	@Test
+	public void onLogoutSuccess_shouldNotSetIdTokenIfNoneIsSetForTheUser() throws IOException, ServletException {
+		PowerMockito.mockStatic(Context.class);
+		Mockito.when(Context.getAuthenticatedUser()).thenReturn(new User());
+		
+		CustomLogoutSuccessHandler customLogoutSuccessHandler = new CustomLogoutSuccessHandler();
+		RedirectStrategy redirectStrategy = mock(RedirectStrategy.class);
+		customLogoutSuccessHandler.setRedirectStrategy(redirectStrategy);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		HttpServletResponse response = mock(HttpServletResponse.class);
+		
+		customLogoutSuccessHandler.onLogoutSuccess(request, response, null);
+		
+		PowerMockito.verifyStatic();
+		Context.logout();
+		
+		verify(redirectStrategy).sendRedirect(request, response,
+		    "http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout?client_id=openmrs");
+	}
+	
 }

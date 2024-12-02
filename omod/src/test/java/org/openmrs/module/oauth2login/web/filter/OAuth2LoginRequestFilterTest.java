@@ -166,4 +166,19 @@ public class OAuth2LoginRequestFilterTest {
 		verify(response, never()).sendRedirect(any(String.class));
 		verify(chain, times(1)).doFilter(request, response);
 	}
+	
+	@Test
+	public void doFilter_shouldRedirectToLogoutUriForLegacyUiRequests() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		HttpServletResponse response = mock(HttpServletResponse.class);
+		FilterChain chain = mock(FilterChain.class);
+		
+		request.setServletPath("/ms");
+		request.setRequestURI("/ms/logout");
+		filter.doFilter(request, response, chain);
+		
+		verify(response).sendRedirect("/oauth2logout");
+		verifyZeroInteractions(chain);
+	}
+	
 }
