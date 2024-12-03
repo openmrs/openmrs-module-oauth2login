@@ -9,15 +9,21 @@
  */
 package org.openmrs.module.oauth2login.web.filter;
 
-import org.apache.commons.lang3.StringUtils;
-import org.openmrs.api.context.Context;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.StringUtils;
+import org.openmrs.api.context.Context;
 
 /**
  * This servlet filter ensures that the only way to authenticate is through the appropriate URI
@@ -64,7 +70,7 @@ public class OAuth2LoginRequestFilter implements Filter {
 		if (!requestURIs.contains(requestURI) && !servletPaths.contains(servletPath)) {
 			
 			// Logout (forwarding)
-			if (isLogoutRequest(servletPath, httpRequest)) {
+			if (isLogoutRequest(servletPath, requestURI, httpRequest)) {
 				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2logout");
 				return;
 			}
@@ -80,12 +86,15 @@ public class OAuth2LoginRequestFilter implements Filter {
 		chain.doFilter(httpRequest, httpResponse);
 	}
 	
-	private boolean isLogoutRequest(String path, HttpServletRequest httpServletRequest) {
+	private boolean isLogoutRequest(String path, String uri, HttpServletRequest httpServletRequest) {
 		//"manual-logout": should be a constant from org.openmrs.module.appui.AppUiConstants
 		//in OpenMRS the path is ../../logout.action : should we use this in this test ?
 		//the attribute seems to be used in any case.
+		//TODO The module assumes that only legacyUI and RA logout endpoints are in use or won't change, they should 
+		//instead be configurable to adapt to changes and support other distributions that might use custom endpoints.
 		return path.equalsIgnoreCase("/logout")
-		//				|| path.equalsIgnoreCase("/oauth2logout")
+		        || uri.equalsIgnoreCase("/ms/logout")
+		        //				|| path.equalsIgnoreCase("/oauth2logout")
 		        || (httpServletRequest.getSession() != null && "true".equals(httpServletRequest.getSession().getAttribute(
 		            "manual-logout")));
 	}

@@ -25,6 +25,8 @@ import org.openmrs.module.oauth2login.PropertyUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler implements LogoutSuccessHandler {
 	
@@ -35,9 +37,23 @@ public class CustomLogoutSuccessHandler extends SimpleUrlLogoutSuccessHandler im
 		String redirectPath = properties.getProperty("logoutUri");
 		//the redirect path can contain a [token] that should be replaced by the aut token
 		if (StringUtils.isNoneBlank(redirectPath) && redirectPath.contains("[token]")) {
-			String token = Context.getAuthenticatedUser().getUserProperty(USER_PROP_ID_TOKEN);
-			String encoded = URLEncoder.encode(token, "UTF-8");
-			redirectPath = StringUtils.replace(redirectPath, "[token]", encoded);
+			String token = null;
+			if (Context.getAuthenticatedUser() != null) {
+				token = Context.getAuthenticatedUser().getUserProperty(USER_PROP_ID_TOKEN);
+			}
+			
+			if (StringUtils.isNotBlank(token)) {
+				String encoded = URLEncoder.encode(token, "UTF-8");
+				redirectPath = StringUtils.replace(redirectPath, "[token]", encoded);
+			} else {
+				//Oauth2 specification requires the id_token_hint or client_id, fallback to client_id
+				UriComponentsBuilder urlBuilder = UriComponentsBuilder.fromHttpUrl(redirectPath);
+				MultiValueMap<String, String> params = urlBuilder.build().getQueryParams();
+				if (!params.containsKey("client_id")) {
+					redirectPath = StringUtils.replace(redirectPath, "id_token_hint=[token]",
+					    "client_id=" + properties.getProperty("clientId"));
+				}
+			}
 		}
 		Context.logout();
 		redirectPath = StringUtils.defaultIfBlank(redirectPath, request.getContextPath() + "/oauth2login");
