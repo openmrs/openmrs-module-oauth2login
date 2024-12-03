@@ -36,6 +36,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.context.Credentials;
 import org.openmrs.module.DaemonTokenAware;
 import org.openmrs.module.TestDaemonToken;
+import org.openmrs.module.oauth2login.PropertyUtils;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
 import org.openmrs.test.BaseModuleContextSensitiveTest;
@@ -107,7 +108,7 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	protected Credentials getCredentials() {
 		
 		try {
-			oauth2Props = OAuth2BeanFactory.getProperties(Paths.get(System.getProperty(OPENMRS_APPLICATION_DATA_DIRECTORY),
+			oauth2Props = PropertyUtils.getProperties(Paths.get(System.getProperty(OPENMRS_APPLICATION_DATA_DIRECTORY),
 			    "oauth2.properties"));
 		}
 		catch (IOException e) {

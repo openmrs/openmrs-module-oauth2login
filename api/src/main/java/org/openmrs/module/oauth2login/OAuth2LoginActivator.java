@@ -10,6 +10,8 @@
 package org.openmrs.module.oauth2login;
 
 import static org.openmrs.module.oauth2login.OAuth2LoginConstants.AUTH_SCHEME_COMPONENT;
+import static org.openmrs.module.oauth2login.OAuth2LoginConstants.MODULE_ARTIFACT_ID;
+import static org.openmrs.module.oauth2login.OAuth2LoginConstants.OAUTH2_ENABLED_PROPERTY;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,6 +19,11 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.BaseModuleActivator;
 import org.openmrs.module.DaemonToken;
 import org.openmrs.module.DaemonTokenAware;
+import org.openmrs.module.ModuleException;
+import org.openmrs.module.ModuleFactory;
+
+import java.io.IOException;
+import java.util.Properties;
 
 /**
  * This class contains the logic that is run every time this module is either started or shutdown
@@ -26,6 +33,31 @@ public class OAuth2LoginActivator extends BaseModuleActivator implements DaemonT
 	private final Log log = LogFactory.getLog(getClass());
 	
 	private DaemonToken daemonToken;
+	
+	/**
+	 * @see #willStart()
+	 */
+	@Override
+	public void willStart() {
+		// Checks if OAuth2 is enabled, if not, stops the module and unloads it
+		try {
+			Properties oauth2Props = PropertyUtils.getOAuth2Properties();
+			boolean moduleEnabled = Boolean.parseBoolean(oauth2Props.getProperty(OAUTH2_ENABLED_PROPERTY, "true"));
+			if (!moduleEnabled) {
+				log.info("OAuth2 is disabled. Skipping module start.");
+				// Stop the module if it is already started
+				if (ModuleFactory.isModuleStarted(MODULE_ARTIFACT_ID)) {
+					ModuleFactory.stopModule(ModuleFactory.getModuleById(MODULE_ARTIFACT_ID));
+				}
+				ModuleFactory.unloadModule(ModuleFactory.getModuleById(MODULE_ARTIFACT_ID));
+			} else {
+				log.info("OAuth2 is enabled. " + OAuth2LoginConstants.MODULE_NAME + " module will start.");
+			}
+		}
+		catch (IOException e) {
+			throw new ModuleException("Failed to load OAuth2 properties file", e);
+		}
+	}
 	
 	/**
 	 * @see #started()
