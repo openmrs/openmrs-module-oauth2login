@@ -50,10 +50,10 @@ public class OAuth2LoginActivatorTest {
 		activator.willStart();
 		
 		// Verify
-		verifyStatic(times(1));
+		verifyStatic();
 		ModuleFactory.stopModule(ModuleFactory.getModuleById(OAuth2LoginConstants.MODULE_ARTIFACT_ID));
 		
-		verifyStatic(times(1));
+		verifyStatic();
 		ModuleFactory.unloadModule(ModuleFactory.getModuleById(OAuth2LoginConstants.MODULE_ARTIFACT_ID));
 	}
 	
@@ -87,7 +87,7 @@ public class OAuth2LoginActivatorTest {
 		activator.willStart();
 		
 		// Verify
-		verifyStatic(times(1));
+		verifyStatic();
 		ModuleFactory.isModuleStarted(OAuth2LoginConstants.MODULE_ARTIFACT_ID);
 		
 		verifyStatic(times(2));
