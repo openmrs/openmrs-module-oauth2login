@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.oauth2login.web.Utils;
 
 /**
  * This servlet filter ensures that the only way to authenticate is through the appropriate URI
@@ -81,6 +82,11 @@ public class OAuth2LoginRequestFilter implements Filter {
 				httpResponse.sendRedirect(httpRequest.getContextPath() + "/oauth2login");
 				return;
 			}
+		} else if (requestURI.equals("/ws/rest/v1/session") && "DELETE".equals(httpRequest.getMethod())) {
+			final String redirectUrl = Utils.getPostLogoutRedirectUrl(httpRequest);
+			chain.doFilter(httpRequest, httpResponse);
+			httpResponse.setHeader("Location", redirectUrl);
+			return;
 		}
 		
 		chain.doFilter(httpRequest, httpResponse);

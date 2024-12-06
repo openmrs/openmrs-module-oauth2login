@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -29,8 +28,11 @@ import javax.servlet.http.HttpSession;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.openmrs.User;
 import org.openmrs.api.context.Context;
 import org.openmrs.api.context.UserContext;
+import org.openmrs.module.oauth2login.OAuth2LoginConstants;
 import org.openmrs.module.oauth2login.web.controller.OAuth2IntegrationTest;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -44,7 +46,7 @@ public class OAuth2LoginRequestFilterTest {
 	private final OAuth2LoginRequestFilter filter = new OAuth2LoginRequestFilter();
 	
 	@Before
-	public void setup() throws ServletException {
+	public void setup() {
 		PowerMockito.mockStatic(Context.class);
 		OAuth2IntegrationTest.initPathInSystemProperties("Keycloak");
 		FilterConfig filterConfig = mock(FilterConfig.class);
@@ -179,6 +181,26 @@ public class OAuth2LoginRequestFilterTest {
 		
 		verify(response).sendRedirect("/oauth2logout");
 		verifyZeroInteractions(chain);
+	}
+	
+	@Test
+	public void doFilter_shouldSetLocationHeaderToRedirectUrlRestLogoutRequest() throws Exception {
+		final String idToken = "myToken";
+		User user = new User();
+		user.setUserProperty(OAuth2LoginConstants.USER_PROP_ID_TOKEN, idToken);
+		Mockito.when(Context.getAuthenticatedUser()).thenReturn(user);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		HttpServletResponse response = mock(HttpServletResponse.class);
+		FilterChain chain = mock(FilterChain.class);
+		
+		request.setServletPath("/ws");
+		request.setRequestURI("/ws/rest/v1/session");
+		request.setMethod("DELETE");
+		filter.doFilter(request, response, chain);
+		
+		verify(chain).doFilter(request, response);
+		verify(response).setHeader("Location",
+		    "http://localhost:8081/auth/realms/demo/protocol/openid-connect/logout?id_token_hint=" + idToken);
 	}
 	
 }
