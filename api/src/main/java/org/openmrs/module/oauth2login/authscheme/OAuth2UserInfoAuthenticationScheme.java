@@ -84,11 +84,11 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		if (!creds.isServiceAccount()) {
 			if (user == null) {
 				createUser(creds.getUserInfo());
+				// Get the user again after the user has been created
+				user = getContextDAO().getUserByUsername(credentials.getClientName());
 			} else {
 				updateUser(user, creds.getUserInfo());
 			}
-			// Get the user again because the user may have been created in the previous line
-			user = getContextDAO().getUserByUsername(credentials.getClientName());
 			
 			postProcessor.process(creds.getUserInfo());
 		}
