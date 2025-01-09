@@ -84,21 +84,22 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		if (!creds.isServiceAccount()) {
 			if (user == null) {
 				createUser(creds.getUserInfo());
+				// Get the user again after the user has been created
+				user = getContextDAO().getUserByUsername(credentials.getClientName());
 			} else {
 				updateUser(user, creds.getUserInfo());
 			}
 			
 			postProcessor.process(creds.getUserInfo());
 		}
-		
 		return new BasicAuthenticated(user, credentials.getAuthenticationScheme());
 	}
 	
 	private void createUser(UserInfo userInfo) throws ContextAuthenticationException {
 		try {
-			getContextDAO().createUser(userInfo.getOpenmrsUser("n/a"), RandomStringUtils.random(100, true, true),
-			    userInfo.getRoleNames());
-			
+			User user = userInfo.getOpenmrsUser("n/a");
+			String password = RandomStringUtils.random(100, true, true);
+			getContextDAO().createUser(user, password, userInfo.getRoleNames());
 		}
 		catch (Exception e) {
 			throw new ContextAuthenticationException(e.getMessage(), e);
