@@ -69,16 +69,13 @@ public class OAuth2UserInfoAuthenticationSchemeTest {
 	
 	@Test
 	public void authenticate_shouldCreateNewUserWhenUserDoesNotExist() throws Exception {
-		// Given
 		when(contextDAO.getUserByUsername("tester")).thenReturn(null);
 		User newUser = new User();
 		when(userInfo.getOpenmrsUser(anyString())).thenReturn(newUser);
 		when(userInfo.getRoleNames()).thenReturn(Arrays.asList("Provider", "Nurse"));
 		
-		// When
 		Authenticated result = authScheme.authenticate(credentials);
 		
-		// Then
 		verify(contextDAO).createUser(eq(newUser), anyString(), eq(Arrays.asList("Provider", "Nurse")));
 		assertNotNull(result);
 	}
@@ -91,10 +88,10 @@ public class OAuth2UserInfoAuthenticationSchemeTest {
 	}
 	
 	@Test
+	@SuppressWarnings("unchecked")
 	public void authenticate_shouldSkipUserCreationForServiceAccount() throws Exception {
 		when(credentials.isServiceAccount()).thenReturn(true);
-		User existingUser = new User();
-		when(contextDAO.getUserByUsername("tester")).thenReturn(existingUser);
+		when(contextDAO.getUserByUsername("tester")).thenReturn(new User());
 		
 		Authenticated result = authScheme.authenticate(credentials);
 		
