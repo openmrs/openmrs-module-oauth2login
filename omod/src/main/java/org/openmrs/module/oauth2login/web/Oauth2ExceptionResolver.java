@@ -44,4 +44,8 @@ public class Oauth2ExceptionResolver extends SimpleMappingExceptionResolver {
 		return super.resolveException(request, response, handler, ex);
 	}
 	
+	@Override
+	public int getOrder() {
+		return 50;
+	}
 }
