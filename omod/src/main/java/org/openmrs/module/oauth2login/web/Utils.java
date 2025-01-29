@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +16,7 @@ import org.openmrs.module.oauth2login.OAuth2LoginConstants;
 import org.openmrs.module.oauth2login.PropertyUtils;
 import org.openmrs.util.OpenmrsUtil;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -35,6 +38,7 @@ public class Utils {
 	public static String getPostLogoutRedirectUrl(HttpServletRequest request) throws IOException {
 		Properties properties = PropertyUtils.getProperties(PropertyUtils.getOAuth2PropertiesPath());
 		String redirectPath = properties.getProperty("logoutUri");
+		boolean encodeDisabled = Boolean.valueOf(properties.getProperty("logoutUri.encode.disabled"));
 		//the redirect path can contain a [token] that should be replaced by the auth token
 		if (StringUtils.isNoneBlank(redirectPath) && redirectPath.contains("[token]")) {
 			String token = null;
@@ -56,7 +60,28 @@ public class Utils {
 			}
 		}
 		
+		if (!encodeDisabled) {
+			redirectPath = encodeUrl(redirectPath);
+		}
 		return StringUtils.defaultIfBlank(redirectPath, request.getContextPath() + "/oauth2login");
 	}
 	
+	protected static String encodeUrl(String logoutUrl) {
+		UriComponents urlComponents = UriComponentsBuilder.fromHttpUrl(logoutUrl).build();
+		MultiValueMap<String, String> params = urlComponents.getQueryParams();
+		UriComponentsBuilder urlBuilderEncoded = UriComponentsBuilder.newInstance();
+		urlBuilderEncoded.scheme(urlComponents.getScheme());
+		urlBuilderEncoded.host(urlComponents.getHost());
+		urlBuilderEncoded.port(urlComponents.getPort());
+		urlBuilderEncoded.path(urlComponents.getPath());
+		urlBuilderEncoded.fragment(urlComponents.getFragment());
+		if (params != null) {
+			for (Map.Entry<String, List<String>> entry : params.entrySet()) {
+				final String encodedKey = URLEncoder.encode(entry.getKey());
+				entry.getValue().forEach(v -> urlBuilderEncoded.queryParam(encodedKey, URLEncoder.encode(v)));
+			}
+		}
+		
+		return urlBuilderEncoded.build().toString();
+	}
 }
