@@ -10,7 +10,7 @@
 
 	<groupId>org.openmrs.module</groupId>
 	<artifactId>oauth2login</artifactId>
-	<version>1.5.0</version>
+	<version>1.6.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<name>OAuth 2.0 Login</name>
 	<description>Delegates user authentication to an OAuth 2.0 authentication provider.</description>
