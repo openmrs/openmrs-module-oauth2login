@@ -116,7 +116,6 @@ variables:
   build.docker.image.id: maven:3.9.9-amazoncorretto-8
   maven.development.version: 1.7.0-SNAPSHOT
   maven.release.version: 1.6.0
-  refapp.distro.property: ''
 repositories:
 - Git:
     type: git
