@@ -101,8 +101,7 @@ public class JwtUtils {
 			}
 			
 			if (localPublicKey == null && StringUtils.isNotBlank(oauthProps.getProperty(OAUTH_PROP_KEYS_URL))) {
-				String keys = HttpUtils.getJsonWebKeys(oauthProps.getProperty(OAUTH_PROP_KEYS_URL).trim());
-				remoteJsonWebKeySet = new JsonWebKeySet(keys);
+				fetchAndStoreJsonWebKeys(oauthProps);
 			}
 			
 			keysInitialized = true;
@@ -119,6 +118,12 @@ public class JwtUtils {
 			jws.setCompactSerialization(jwt);
 			VerificationJwkSelector keySelector = new VerificationJwkSelector();
 			JsonWebKey jwk = keySelector.select(jws, remoteJsonWebKeySet.getJsonWebKeys());
+			//keys can be rotated.
+			if (jwk == null && remoteJsonWebKeySet != null) {
+				fetchAndStoreJsonWebKeys(oauthProps);
+				jwk = keySelector.select(jws, remoteJsonWebKeySet.getJsonWebKeys());
+			}
+			
 			if (jwk != null) {
 				jws.setKey(jwk.getKey());
 				//Do a quick check of the signature, an exception will be thrown in case of an unsupported algorithm
@@ -133,6 +138,11 @@ public class JwtUtils {
 		}
 		
 		return null;
+	}
+	
+	private static void fetchAndStoreJsonWebKeys(Properties oauthProps) throws Exception {
+		String keys = HttpUtils.getJsonWebKeys(oauthProps.getProperty(OAUTH_PROP_KEYS_URL).trim());
+		remoteJsonWebKeySet = new JsonWebKeySet(keys);
 	}
 	
 	/**
