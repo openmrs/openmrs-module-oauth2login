@@ -23,6 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
 
 import net.minidev.json.JSONArray;
 
@@ -55,10 +58,14 @@ public class UserInfo {
 	public static final String PROP_ROLES = MAPPINGS_PFX + "user.roles";
 	
 	public final static String PROP_PROVIDER = MAPPINGS_PFX + "user.provider";
+
+    public final static String PROP_ALLOW_MISSING_PROPERTIES = MAPPINGS_PFX + "allowMissingProperties";
 	
-	private String json; // the user info json
+	private final String json; // the user info json
 	
-	private Properties props;
+	private final Properties props;
+
+    private final Configuration activeConfiguration;
 	
 	/**
 	 * The user info object representation is built from the user info JSON and the OAuth2 mapping
@@ -73,6 +80,12 @@ public class UserInfo {
 	public UserInfo(Properties oauth2Props, String userInfoJson) {
 		this.props = oauth2Props;
 		this.json = userInfoJson;
+		
+		if (props.getProperty(PROP_ALLOW_MISSING_PROPERTIES, "false").equals("true")) {
+			activeConfiguration = Configuration.defaultConfiguration().addOptions(Option.DEFAULT_PATH_LEAF_TO_NULL);
+		} else {
+			activeConfiguration = Configuration.defaultConfiguration();
+		}
 	}
 	
 	@Override
@@ -99,7 +112,8 @@ public class UserInfo {
 		if (props.containsKey(propertyKey)) {
 			String jsonKey = props.getProperty(propertyKey);
 			try {
-				return JsonPath.read(json, "$." + jsonKey);
+				DocumentContext context = JsonPath.using(activeConfiguration).parse(json);
+				return context.read("$." + jsonKey);
 			}
 			catch (PathNotFoundException e) {
 				throw new PathNotFoundException("There was an error when reading the JSON path $." + jsonKey
