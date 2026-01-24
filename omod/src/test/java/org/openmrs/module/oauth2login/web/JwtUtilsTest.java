@@ -4,6 +4,7 @@ import static io.jsonwebtoken.SignatureAlgorithm.RS256;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.openmrs.module.oauth2login.web.JwtUtils.OAUTH_PROP_KEY;
 import static org.openmrs.module.oauth2login.web.JwtUtils.OAUTH_PROP_KEYS_URL;
@@ -199,6 +200,63 @@ public class JwtUtilsTest {
 		ee.expectMessage("JWT must not be accepted before " + DateFormats.formatIso8601(notBeforeDate, false));
 		
 		JwtUtils.parseAndVerifyToken(jwtToken, null);
+	}
+	
+	@Test
+	public void getPublicKey_shouldRefetchKeysWhenKeyNotFoundInRemoteKeySet() throws Exception {
+		// Simulate key rotation: token uses a key ID (kid) that doesn't match any key in the initial key set
+		final String url = "http://someurl.com";
+		when(mockProps.getProperty(OAUTH_PROP_KEYS_URL)).thenReturn(url);
+		
+		// Load the test JWT token (this token has a specific kid that won't match our mock keys initially)
+		final String jwtToken = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("jwtToken.txt"), "UTF-8");
+		
+		// First call returns a key set that doesn't contain the key we need
+		// This simulates the scenario where keys have been rotated on the IdP
+		final String emptyKeysJson = "{\"keys\":[]}";
+		
+		// Second call returns the actual keys with the correct key
+		final String actualKeysJson = IOUtils
+		        .toString(getClass().getClassLoader().getResourceAsStream("keys.json"), "UTF-8");
+		
+		// Mock HttpUtils to return empty keys first, then actual keys on refetch
+		when(HttpUtils.getJsonWebKeys(url)).thenReturn(emptyKeysJson, actualKeysJson);
+		
+		// Call getPublicKey - should trigger key rotation logic
+		PublicKey result = JwtUtils.getPublicKey(jwtToken, mockProps);
+		
+		// Verify that HttpUtils.getJsonWebKeys was called TWICE (initial fetch + refetch for rotation)
+		PowerMockito.verifyStatic(times(2));
+		//Call the static method  to be verified (doesn't actually execute it)
+		HttpUtils.getJsonWebKeys(url);
+		
+		// Verify we got a valid key
+		Assert.assertNotNull("Should return a public key after refetching", result);
+	}
+	
+	@Test
+	public void getPublicKey_shouldNotRefetchKeysWhenKeyFoundInRemoteKeySet() throws Exception {
+		// This tests the scenario where the key IS found on first attempt - no refetch needed
+		final String url = "http://someurl.com";
+		when(mockProps.getProperty(OAUTH_PROP_KEYS_URL)).thenReturn(url);
+		
+		// Load the test JWT token and matching keys
+		final String jwtToken = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("jwtToken.txt"), "UTF-8");
+		final String keysJson = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("keys.json"), "UTF-8");
+		
+		// Mock HttpUtils to return the correct keys
+		when(HttpUtils.getJsonWebKeys(url)).thenReturn(keysJson);
+		
+		// Call getPublicKey - should find the key on first try
+		PublicKey result = JwtUtils.getPublicKey(jwtToken, mockProps);
+		
+		// Verify that HttpUtils.getJsonWebKeys was called ONCE (no refetch needed)
+		PowerMockito.verifyStatic(times(1));
+		//Call the static method  to be verified (doesn't actually execute it)
+		HttpUtils.getJsonWebKeys(url);
+
+		// Verify we got a valid key
+		Assert.assertNotNull("Should return a public key on first attempt", result);
 	}
 	
 }
