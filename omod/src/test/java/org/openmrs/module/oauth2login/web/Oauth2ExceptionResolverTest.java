@@ -10,56 +10,69 @@
  */
 package org.openmrs.module.oauth2login.web;
 
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.openmrs.api.APIException;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
 import org.springframework.security.oauth2.client.resource.UserRedirectRequiredException;
 import org.springframework.web.servlet.ModelAndView;
 
-@RunWith(PowerMockRunner.class)
-public class Oauth2ExceptionResolverTest {
-	
-	@Mock
-	private HttpServletRequest mockRequest;
-	
-	@Mock
-	private HttpServletResponse mockResp;
-	
-	@Mock
-	private Object mockHandler;
-	
-	private Oauth2ExceptionResolver resolver = new Oauth2ExceptionResolver();
-	
-	@Test
-	public void resolveException_shouldReturnNullForUserRedirectRequiredException() {
-		UserRedirectRequiredException ex = new UserRedirectRequiredException(null, null);
-		Assert.assertNull(resolver.resolveException(mockRequest, mockResp, mockHandler, ex));
-	}
-	
-	@Test
-	public void resolveException_shouldDelegateToSuperClassForOtherExceptionsTypes() {
-		final String viewName = "testErrorView";
-		APIException ex = new APIException();
-		Set<Object> mappedHandlers = new HashSet<>();
-		mappedHandlers.add(mockHandler);
-		Whitebox.setInternalState(resolver, "mappedHandlers", mappedHandlers);
-		Properties props = new Properties();
-		props.put(APIException.class.getName(), viewName);
-		resolver.setExceptionMappings(props);
-		
-		ModelAndView mav = resolver.resolveException(mockRequest, mockResp, mockHandler, ex);
-		
-		Assert.assertEquals(viewName, mav.getViewName());
-	}
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(MockitoExtension.class)
+class Oauth2ExceptionResolverTest {
+
+    @Mock
+    private HttpServletRequest mockRequest;
+
+    @Mock
+    private HttpServletResponse mockResponse;
+
+    @Mock
+    private Object mockHandler;
+
+    @InjectMocks
+    private Oauth2ExceptionResolver resolver;
+
+    @BeforeEach
+    void setup() {
+        resolver = new Oauth2ExceptionResolver();
+    }
+
+    @Test
+    void shouldReturnNull_WhenUserRedirectRequiredException() {
+        UserRedirectRequiredException ex = new UserRedirectRequiredException("dummyUri", Collections.emptyMap());
+        assertNull(resolver.resolveException(mockRequest, mockResponse, mockHandler, ex));
+    }
+
+    @Test
+    void shouldReturnMappedView_WhenOtherExceptionOccurs() throws Exception {
+        final String viewName = "testErrorView";
+        APIException ex = new APIException();
+
+        // Simulate a handler being mapped
+        Set<Object> mappedHandlers = new HashSet<>();
+        mappedHandlers.add(mockHandler);
+
+        // Use reflection instead of PowerMock
+        var mappedHandlersField = resolver.getClass().getSuperclass().getDeclaredField("mappedHandlers");
+        mappedHandlersField.setAccessible(true);
+        mappedHandlersField.set(resolver, mappedHandlers);
+
+        Properties props = new Properties();
+        props.put(APIException.class.getName(), viewName);
+        resolver.setExceptionMappings(props);
+
+        ModelAndView mav = resolver.resolveException(mockRequest, mockResponse, mockHandler, ex);
+
+        assertNotNull(mav);
+        assertEquals(viewName, mav.getViewName());
+    }
 }
