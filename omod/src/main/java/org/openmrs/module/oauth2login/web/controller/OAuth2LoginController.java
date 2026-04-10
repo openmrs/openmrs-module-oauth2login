@@ -25,7 +25,7 @@ import org.openmrs.api.PersonService;
 import org.openmrs.api.ProviderService;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Context;
-import org.openmrs.api.context.ContextAuthenticationException;
+import org.openmrs.api.ValidationException;
 import org.openmrs.module.oauth2login.OAuth2LoginConstants;
 import org.openmrs.module.oauth2login.authscheme.OAuth2TokenCredentials;
 import org.openmrs.module.oauth2login.authscheme.UserInfo;
@@ -36,8 +36,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2RestOperations;
+import org.springframework.security.oauth2.client.resource.OAuth2AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -89,6 +91,14 @@ public class OAuth2LoginController {
 		catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		}
+        catch (OAuth2AccessDeniedException e) {
+            log.debug("OAuth2AccessDeniedException: " + e.getMessage());
+            Throwable cause = e.getCause();
+            if (cause instanceof ResourceAccessException) {
+                log.debug("ResourceAccessException: " + cause.getMessage());
+            }
+            throw e;
+        }
 		
 		final UserInfo userInfo = new UserInfo(oauth2Props, userInfoJson);
 		try {
@@ -105,13 +115,19 @@ public class OAuth2LoginController {
 				}
 			}
 		}
-		catch (ContextAuthenticationException e) {
-			log.warn("The user '" + userInfo + "' could not be authenticated with the identity provider.");
+		catch (Exception e) {
+			log.debug("Exception: ", e);
+			Throwable cause = e.getCause();
+			if (cause instanceof ValidationException) {
+				log.warn("The user '" + userInfo
+				        + "' was authenticated with the identity provider but could not be created in Openmrs.");
+				log.info("ValidationException: " + cause.getMessage());
+			} else {
+                log.warn("The user '" + userInfo + "' could not be authenticated with the identity provider.");
+            }
 			throw e;
 		}
-		finally {
-			log.info("The user '" + userInfo + "' was successfully authenticated with the identity provider.");
-		}
+		log.info("The user '" + userInfo + "' was successfully authenticated with the identity provider.");
 		
 		return new ModelAndView("redirect:" + getRedirectUri());
 	}
