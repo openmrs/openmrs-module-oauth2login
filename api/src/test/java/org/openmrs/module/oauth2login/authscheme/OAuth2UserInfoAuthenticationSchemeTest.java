@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.openmrs.Role;
 import org.openmrs.User;
 import org.openmrs.api.UserService;
 import org.openmrs.api.context.Authenticated;
@@ -22,10 +23,15 @@ import org.openmrs.api.context.Context;
 import org.openmrs.api.context.ContextAuthenticationException;
 import org.openmrs.api.context.Credentials;
 import org.openmrs.api.db.ContextDAO;
-import org.openmrs.module.DaemonToken;
+import org.openmrs.module.TestDaemonToken;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyList;
@@ -51,20 +57,17 @@ public class OAuth2UserInfoAuthenticationSchemeTest {
 	@Mock
 	private UserInfo userInfo;
 	
-	@Mock
-	private DaemonToken daemonToken;
-	
 	private OAuth2TokenCredentials credentials;
 	
 	@Before
 	public void setup() {
 		Context.setDAO(contextDAO);
-		authScheme.setDaemonToken(daemonToken);
+		// a valid token, so that the user update can run in a daemon thread
+		new TestDaemonToken().setDaemonToken(authScheme);
 		credentials = mock(OAuth2TokenCredentials.class);
 		when(credentials.getClientName()).thenReturn("tester");
 		when(credentials.getUserInfo()).thenReturn(userInfo);
 		when(credentials.getAuthenticationScheme()).thenReturn("oauth2");
-		when(daemonToken.getId()).thenReturn("token");
 	}
 	
 	@Test
@@ -77,7 +80,38 @@ public class OAuth2UserInfoAuthenticationSchemeTest {
 		Authenticated result = authScheme.authenticate(credentials);
 		
 		verify(contextDAO).createUser(eq(newUser), anyString(), eq(Arrays.asList("Provider", "Nurse")));
+		verify(userService, never()).saveUser(any(User.class));
 		assertNotNull(result);
+	}
+	
+	@Test
+	public void authenticate_shouldApplyRoleChangesToTheUserOfThisSignIn() throws Exception {
+		// the stored user has the role 'Nurse', the identity provider now says 'Midwife'
+		Set<String> storedRoleNames = new HashSet<>(Collections.singletonList("Nurse"));
+		when(userService.getUserByUsername("tester")).thenAnswer(invocation -> userWithRoles(storedRoleNames));
+		when(contextDAO.getUserByUsername("tester")).thenAnswer(invocation -> userWithRoles(storedRoleNames));
+		when(userService.getRole(anyString())).thenAnswer(invocation -> new Role((String) invocation.getArguments()[0]));
+		when(userService.saveUser(any(User.class))).thenAnswer(invocation -> {
+			User saved = (User) invocation.getArguments()[0];
+			storedRoleNames.clear();
+			storedRoleNames.addAll(saved.getRoles().stream().map(Role::getRole).collect(Collectors.toSet()));
+			return saved;
+		});
+		when(userInfo.getUsername()).thenReturn("tester");
+		when(userInfo.getOpenmrsUser()).thenReturn(new User());
+		when(userInfo.getRoleNames()).thenReturn(Collections.singletonList("Midwife"));
+		
+		Authenticated result = authScheme.authenticate(credentials);
+		
+		Set<String> roleNames = result.getUser().getRoles().stream().map(Role::getRole).collect(Collectors.toSet());
+		assertEquals(Collections.singleton("Midwife"), roleNames);
+	}
+	
+	private static User userWithRoles(Set<String> roleNames) {
+		User user = new User();
+		user.setUsername("tester");
+		user.setRoles(roleNames.stream().map(Role::new).collect(Collectors.toSet()));
+		return user;
 	}
 	
 	@Test(expected = ContextAuthenticationException.class)

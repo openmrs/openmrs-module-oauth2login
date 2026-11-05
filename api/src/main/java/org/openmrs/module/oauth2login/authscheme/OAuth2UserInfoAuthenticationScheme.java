@@ -80,14 +80,18 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 			        + getClass().getSimpleName() + " authentication scheme.", e);
 		}
 		
+		if (!creds.isServiceAccount()) {
+			// The update must be saved before the user is loaded below, otherwise the session
+			// would be opened with the roles the user had before this sign-in.
+			updateUser(creds.getUserInfo());
+		}
+		
 		User user = getContextDAO().getUserByUsername(credentials.getClientName());
 		if (!creds.isServiceAccount()) {
 			if (user == null) {
 				createUser(creds.getUserInfo());
 				// Get the user again after the user has been created
 				user = getContextDAO().getUserByUsername(credentials.getClientName());
-			} else {
-				updateUser(user, creds.getUserInfo());
 			}
 			
 			postProcessor.process(creds.getUserInfo());
@@ -106,10 +110,15 @@ public class OAuth2UserInfoAuthenticationScheme extends DaoAuthenticationScheme 
 		}
 	}
 	
-	private void updateUser(User user, UserInfo userInfo) {
+	/**
+	 * Updates an existing user from the user info, roles included, and waits for the update to be
+	 * saved. It runs as the daemon user since nobody is authenticated yet. Users that do not exist
+	 * yet are left to {@link #createUser(UserInfo)}.
+	 */
+	private void updateUser(UserInfo userInfo) {
 		try {
 			UpdateUserTask task = new UpdateUserTask(userService, userInfo);
-			Daemon.runInDaemonThread(task, daemonToken);
+			Daemon.runInDaemonThreadAndWait(task, daemonToken);
 		}
 		catch (Exception e) {
 			throw new ContextAuthenticationException(e.getMessage(), e);
