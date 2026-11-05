@@ -28,7 +28,17 @@ public class UpdateUserTask implements Runnable {
 	@Override
 	public void run() {
 		User user = userService.getUserByUsername(userInfo.getUsername());
-		userService.saveUser(updated(user));
+		if (user == null) {
+			// first sign-in, the user is created by the authentication scheme
+			return;
+		}
+		try {
+			userService.saveUser(updated(user));
+		}
+		catch (RuntimeException e) {
+			log.error("The OpenMRS user '" + userInfo.getUsername()
+			        + "' could not be updated from the user info, it keeps its current roles and attributes.", e);
+		}
 	}
 	
 	/**

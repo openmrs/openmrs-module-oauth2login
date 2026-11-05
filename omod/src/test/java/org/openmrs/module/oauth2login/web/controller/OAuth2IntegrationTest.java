@@ -107,6 +107,9 @@ public abstract class OAuth2IntegrationTest extends BaseModuleContextSensitiveTe
 	@Override
 	protected Credentials getCredentials() {
 		
+		// authenticating updates the user in a daemon thread, this runs before the @Before setup below
+		new TestDaemonToken().setDaemonToken(authenticationScheme);
+		
 		try {
 			oauth2Props = PropertyUtils.getProperties(Paths.get(System.getProperty(OPENMRS_APPLICATION_DATA_DIRECTORY),
 			    "oauth2.properties"));
